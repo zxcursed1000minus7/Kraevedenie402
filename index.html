@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Моя интерактивная карта</title>
+    <title>Экскурсия по достопримечательностям</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -15,663 +15,319 @@
         
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f0f2f5;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
         }
         
         .container {
-            max-width: 1600px;
+            max-width: 1400px;
             margin: 0 auto;
             background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             overflow: hidden;
+            position: relative;
             height: calc(100vh - 40px);
             display: flex;
             flex-direction: column;
         }
         
         header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(to right, #2c3e50, #4a6491);
             color: white;
-            padding: 15px 20px;
-            flex-shrink: 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            padding: 20px;
+            text-align: center;
             position: relative;
-        }
-        
-        .header-content {
-            flex: 1;
+            flex-shrink: 0;
         }
         
         h1 {
-            font-size: 1.8rem;
-            margin-bottom: 5px;
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #ffd89b, #19547b);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            padding: 0 10px;
         }
         
         .subtitle {
-            font-size: 0.9rem;
+            font-size: 1.1rem;
             opacity: 0.9;
+            padding: 0 10px;
         }
         
-        .header-buttons {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            justify-content: flex-end;
-        }
-        
-        .mode-toggle, .share-btn {
-            background: rgba(255,255,255,0.2);
-            color: white;
-            border: none;
-            border-radius: 20px;
-            padding: 8px 20px;
-            cursor: pointer;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s;
-            white-space: nowrap;
-            font-size: 14px;
-        }
-        
-        .mode-toggle:hover, .share-btn:hover {
-            background: rgba(255,255,255,0.3);
-            transform: translateY(-2px);
-        }
-        
-        .share-btn {
-            background: rgba(52, 152, 219, 0.7);
-        }
-        
-        .share-btn:hover {
-            background: rgba(41, 128, 185, 0.7);
-        }
-        
-        .main-content {
-            display: flex;
-            flex: 1;
-            min-height: 0;
-            transition: all 0.3s;
-        }
-        
-        /* Режим редактирования */
-        .edit-mode .main-content {
-            display: flex;
-        }
-        
-        .edit-mode .control-panel {
-            display: block;
-            width: 350px;
-        }
-        
-        .edit-mode .map-container {
-            flex: 1;
-            position: relative;
-        }
-        
-        .edit-mode #map {
-            width: 100%;
-            height: 100%;
-        }
-        
-        .edit-mode .share-btn {
-            display: flex;
-        }
-        
-        /* Режим презентации */
-        .presentation-mode .main-content {
-            display: flex;
-        }
-        
-        .presentation-mode .control-panel {
+        .mobile-toggle {
             display: none;
-        }
-        
-        .presentation-mode .map-container {
-            flex: 1;
-            width: 100%;
-        }
-        
-        .presentation-mode #map {
-            width: 100%;
-            height: 100%;
-        }
-        
-        .presentation-mode .mode-toggle {
-            background: rgba(255,255,255,0.3);
-        }
-        
-        .presentation-mode .share-btn {
-            display: none;
-        }
-        
-        .presentation-mode .info-panel {
-            display: flex !important;
-        }
-        
-        /* Режим презентации по ссылке (только просмотр) */
-        .presentation-only .header {
-            display: none;
-        }
-        
-        .presentation-only .main-content {
-            height: 100%;
-            display: flex;
-        }
-        
-        .presentation-only .map-container {
-            flex: 1;
-            height: 100%;
-            width: 100%;
-            position: relative;
-        }
-        
-        .presentation-only #map {
-            height: 100%;
-            width: 100%;
-            border-radius: 15px;
-        }
-        
-        .presentation-only .info-panel {
-            display: flex !important;
-        }
-        
-        .presentation-only .status-bar {
-            display: none;
-        }
-        
-        .map-container {
-            flex: 1;
-            position: relative;
-            min-height: 0;
-        }
-        
-        #map {
-            width: 100%;
-            height: 100%;
-        }
-        
-        /* Панель информации о точке */
-        .info-panel {
-            position: absolute;
-            top: 0;
-            right: 0;
-            bottom: 0;
-            width: 400px;
-            background: white;
-            box-shadow: -5px 0 20px rgba(0,0,0,0.1);
-            border-left: 1px solid #ddd;
-            z-index: 1000;
-            display: none;
-            flex-direction: column;
-            overflow: hidden;
-            transition: transform 0.3s ease;
-        }
-        
-        .info-panel.active {
-            display: flex;
-            animation: slideIn 0.3s ease;
-        }
-        
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-            }
-            to {
-                transform: translateX(0);
-            }
-        }
-        
-        .info-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            flex-shrink: 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: relative;
-        }
-        
-        .info-title {
-            font-size: 1.5rem;
-            margin: 0;
-            padding-right: 40px; /* Место для крестика */
-        }
-        
-        .close-info-btn {
             position: absolute;
             top: 20px;
             right: 20px;
             background: rgba(255,255,255,0.2);
-            color: white;
             border: none;
-            border-radius: 50%;
-            width: 32px;
-            height: 32px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            transition: all 0.3s;
-            z-index: 1001;
-        }
-        
-        .close-info-btn:hover {
-            background: rgba(255,255,255,0.3);
-            transform: rotate(90deg);
-        }
-        
-        .info-content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-        }
-        
-        .info-description {
-            margin-bottom: 25px;
-            line-height: 1.6;
-            color: #333;
-            font-size: 15px;
-        }
-        
-        .info-gallery {
-            margin-bottom: 25px;
-        }
-        
-        .info-gallery-title {
-            font-size: 1.1rem;
-            margin-bottom: 15px;
-            color: #333;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .gallery-container {
-            position: relative;
-            width: 100%;
-            margin-bottom: 10px;
-        }
-        
-        .gallery-image {
-            width: 100%;
-            height: 300px;
-            object-fit: cover;
-            border-radius: 8px;
-            display: block;
-        }
-        
-        .gallery-nav {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            background: rgba(0,0,0,0.5);
             color: white;
-            border: none;
-            border-radius: 50%;
             width: 40px;
             height: 40px;
+            border-radius: 50%;
+            font-size: 1.2rem;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
+            z-index: 1000;
             transition: all 0.3s;
         }
         
-        .gallery-nav:hover {
-            background: rgba(0,0,0,0.7);
-            transform: translateY(-50%) scale(1.1);
+        .mobile-toggle:hover {
+            background: rgba(255,255,255,0.3);
         }
         
-        .gallery-prev {
-            left: 10px;
+        .close-info {
+            display: none;
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            font-size: 1rem;
+            cursor: pointer;
+            z-index: 1001;
+            transition: all 0.3s;
         }
         
-        .gallery-next {
-            right: 10px;
+        .close-info:hover {
+            background: #c0392b;
         }
         
-        .gallery-counter {
-            text-align: center;
+        .content {
+            display: flex;
+            flex: 1;
+            min-height: 0;
+            position: relative;
+        }
+        
+        #map {
+            flex: 2;
+            min-height: 0;
+            z-index: 1;
+        }
+        
+        .info-panel {
+            flex: 1;
+            background: #f8f9fa;
+            padding: 25px;
+            overflow-y: auto;
+            border-left: 3px solid #e74c3c;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease;
+            min-height: 0;
+        }
+        
+        .location-info {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            display: none;
+            position: relative;
+        }
+        
+        .location-info.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .location-title {
+            color: #2c3e50;
+            font-size: 1.8rem;
             margin-bottom: 15px;
-            font-size: 14px;
-            color: #666;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e74c3c;
+            padding-right: 30px;
         }
         
-        .gallery-thumbnails {
-            display: flex;
-            gap: 8px;
-            overflow-x: auto;
-            padding: 5px 0;
-        }
-        
-        .gallery-thumb {
-            width: 60px;
-            height: 60px;
-            object-fit: cover;
-            border-radius: 4px;
-            cursor: pointer;
-            opacity: 0.6;
-            transition: all 0.3s;
-            flex-shrink: 0;
-        }
-        
-        .gallery-thumb.active {
-            opacity: 1;
-            border: 2px solid #667eea;
-        }
-        
-        .gallery-thumb:hover {
-            opacity: 0.8;
-        }
-        
-        .info-audio {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #eee;
-        }
-        
-        .info-audio-title {
+        .location-description {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 25px;
             font-size: 1.1rem;
-            margin-bottom: 15px;
-            color: #333;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            white-space: pre-line; /* Сохраняет переносы строк */
+        }
+        
+        .photo-gallery {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .photo-item {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 10px;
+            border: 3px solid white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        
+        .photo-item:hover {
+            transform: scale(1.05);
+        }
+        
+        .photo-item.main-photo {
+            grid-column: span 2;
+            height: 250px;
+        }
+        
+        .photo-gallery[data-count="1"] .photo-item {
+            grid-column: span 2;
+            height: 250px;
+        }
+        
+        .photo-gallery[data-count="2"] .photo-item:first-child {
+            grid-column: span 2;
+            height: 250px;
+        }
+        
+        .photo-gallery[data-count="2"] .photo-item:nth-child(2) {
+            grid-column: span 2;
+            height: 200px;
+        }
+        
+        .photo-gallery[data-count="3"] .photo-item:first-child {
+            grid-column: span 2;
+            height: 250px;
+        }
+        
+        .photo-gallery[data-count="4"] .photo-item:first-child,
+        .photo-gallery[data-count="5"] .photo-item:first-child,
+        .photo-gallery[data-count="6"] .photo-item:first-child,
+        .photo-gallery[data-count="7"] .photo-item:first-child {
+            grid-column: span 2;
+            height: 250px;
         }
         
         .audio-player {
             width: 100%;
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 15px;
+            background: #e74c3c;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 15px;
         }
         
-        .audio-player audio {
+        audio {
             width: 100%;
+            outline: none;
         }
         
-        /* Убрал футер с датой */
+        .audio-label {
+            display: block;
+            color: white;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
         
-        .control-panel {
-            width: 350px;
-            background: #f8f9fa;
-            padding: 15px;
-            border-left: 1px solid #ddd;
-            overflow-y: auto;
+        .legend {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: auto;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
             flex-shrink: 0;
         }
         
-        .form-group {
+        .legend h3 {
+            color: #2c3e50;
             margin-bottom: 15px;
         }
         
-        label {
-            display: block;
-            margin-bottom: 5px;
-            color: #333;
-            font-weight: 500;
-            font-size: 14px;
-        }
-        
-        input, textarea, select {
-            width: 100%;
-            padding: 8px 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-        
-        textarea {
-            height: 80px;
-            resize: vertical;
-        }
-        
-        .file-input-group {
-            margin-bottom: 8px;
-        }
-        
-        .file-input-container {
-            position: relative;
-            margin-bottom: 5px;
-        }
-        
-        .file-input-label {
-            display: block;
-            background: #f8f9fa;
-            border: 2px dashed #667eea;
-            border-radius: 8px;
-            padding: 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .file-input-label:hover {
-            background: #e9ecef;
-            border-color: #5a67d8;
-        }
-        
-        .file-input-label i {
-            font-size: 24px;
-            color: #667eea;
+        .legend-item {
+            display: flex;
+            align-items: center;
             margin-bottom: 10px;
         }
         
-        .file-input-label span {
-            display: block;
-            font-size: 14px;
-            color: #666;
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 10px;
         }
         
-        .file-input-label small {
-            display: block;
-            font-size: 12px;
-            color: #888;
-            margin-top: 5px;
-        }
-        
-        .file-input {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            top: 0;
-            left: 0;
-            opacity: 0;
-            cursor: pointer;
-        }
-        
-        .photos-preview {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-            margin-top: 5px;
-            max-height: 150px;
-            overflow-y: auto;
-            padding: 5px;
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        
-        .photo-preview-item {
-            position: relative;
-            width: 60px;
-            height: 60px;
-            border-radius: 3px;
-            overflow: hidden;
-            border: 1px solid #ddd;
-        }
-        
-        .photo-preview-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        
-        .remove-photo {
-            position: absolute;
-            top: 2px;
-            right: 2px;
-            background: rgba(231, 76, 60, 0.9);
+        .start-tour {
+            background: linear-gradient(to right, #e74c3c, #c0392b);
             color: white;
             border: none;
-            border-radius: 50%;
-            width: 18px;
-            height: 18px;
-            font-size: 10px;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 1.2rem;
             cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s;
             display: flex;
             align-items: center;
             justify-content: center;
-        }
-        
-        .audio-preview {
-            margin-top: 5px;
-            padding: 10px;
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
             gap: 10px;
+            width: 100%;
         }
         
-        .audio-preview audio {
-            flex: 1;
-            height: 30px;
+        .start-tour:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(231, 76, 60, 0.3);
         }
         
-        .remove-audio {
-            background: #e74c3c;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            padding: 5px 10px;
-            font-size: 12px;
-            cursor: pointer;
-        }
-        
-        .file-info {
-            font-size: 12px;
-            color: #666;
-            margin-top: 5px;
-        }
-        
-        .button-group {
-            display: flex;
-            gap: 8px;
-            margin-top: 10px;
-        }
-        
-        button {
-            padding: 10px 15px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 500;
-            transition: all 0.3s;
-            font-size: 14px;
-        }
-        
-        .btn-primary {
-            background: #667eea;
-            color: white;
-            flex: 2;
-        }
-        
-        .btn-secondary {
-            background: #6c757d;
-            color: white;
-            flex: 1;
-        }
-        
-        .btn-primary:hover {
-            background: #5a67d8;
-        }
-        
-        .btn-secondary:hover {
-            background: #5a6268;
-        }
-        
-        .locations-list {
-            margin-top: 15px;
-            border-top: 1px solid #ddd;
-            padding-top: 15px;
-        }
-        
-        .location-item {
+        .custom-marker {
             background: white;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 10px;
-            margin-bottom: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .location-item:hover {
-            border-color: #667eea;
-            transform: translateX(3px);
-        }
-        
-        .location-item.active {
-            border-color: #667eea;
-            background: #f0f7ff;
-        }
-        
-        .location-item-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 3px;
-        }
-        
-        .location-title {
-            font-weight: 600;
-            color: #333;
-            font-size: 14px;
+            border-radius: 50% 50% 50% 0;
+            padding: 15px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+            border: 4px solid #e74c3c;
             display: flex;
             align-items: center;
-            gap: 8px;
+            justify-content: center;
+            font-size: 2rem;
+            transform: rotate(-45deg);
+            position: relative;
+            width: 60px;
+            height: 60px;
         }
         
-        .location-photos-count {
-            background: #667eea;
-            color: white;
-            border-radius: 10px;
-            padding: 2px 6px;
-            font-size: 11px;
-            font-weight: 500;
+        .custom-marker i {
+            transform: rotate(45deg);
+            color: #e74c3c;
         }
         
-        .status-bar {
-            padding: 8px 15px;
-            background: #e9ecef;
+        .marker-pin {
+            width: 30px;
+            height: 30px;
+            border-radius: 50% 50% 50% 0;
+            position: absolute;
+            transform: rotate(-45deg);
+            left: 50%;
+            top: 50%;
+            margin: -15px 0 0 -15px;
+            background: #e74c3c;
+        }
+        
+        footer {
             text-align: center;
-            font-size: 13px;
+            padding: 15px;
             color: #666;
+            background: #f8f9fa;
             border-top: 1px solid #ddd;
             flex-shrink: 0;
-            transition: all 0.3s;
         }
         
-        .presentation-mode .status-bar {
-            display: none;
-        }
-        
-        /* Модальное окно для ссылки */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -679,8 +335,8 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 10000;
+            background: rgba(0,0,0,0.9);
+            z-index: 2000;
             justify-content: center;
             align-items: center;
         }
@@ -689,811 +345,937 @@
             display: flex;
         }
         
-        .modal {
-            background: white;
+        .modal-content {
+            max-width: 90%;
+            max-height: 90%;
+            position: relative;
+        }
+        
+        .modal-img {
+            width: 100%;
+            height: auto;
+            max-height: 80vh;
             border-radius: 10px;
-            padding: 25px;
-            width: 90%;
-            max-width: 500px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-        }
-        
-        .modal h2 {
-            margin-bottom: 15px;
-            color: #333;
-            font-size: 1.5rem;
-        }
-        
-        .modal p {
-            margin-bottom: 20px;
-            color: #666;
-            line-height: 1.5;
-        }
-        
-        .link-container {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        
-        .link-input {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
-            background: #f8f9fa;
-        }
-        
-        .copy-btn {
-            background: #28a745;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            padding: 10px 15px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        
-        .copy-btn:hover {
-            background: #218838;
-        }
-        
-        .copy-btn.copied {
-            background: #6c757d;
-        }
-        
-        .qr-code {
-            text-align: center;
-            margin: 20px 0;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 5px;
-        }
-        
-        .modal-buttons {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-top: 20px;
         }
         
         .close-modal {
-            background: #6c757d;
+            position: absolute;
+            top: -40px;
+            right: 0;
+            background: #e74c3c;
             color: white;
             border: none;
-            border-radius: 4px;
-            padding: 10px 20px;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            font-size: 1.2rem;
             cursor: pointer;
+            z-index: 2001;
         }
         
-        .close-modal:hover {
-            background: #5a6268;
-        }
-        
-        /* Индикатор загрузки */
-        .upload-progress {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 20px 30px;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            z-index: 10001;
-            text-align: center;
-        }
-        
-        .upload-progress.active {
-            display: block;
-        }
-        
-        .progress-bar {
-            width: 200px;
-            height: 10px;
-            background: #f0f0f0;
-            border-radius: 5px;
-            margin: 15px 0;
-            overflow: hidden;
-        }
-        
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #667eea, #764ba2);
-            width: 0%;
-            transition: width 0.3s;
-        }
-        
-        /* Кнопка "Показать информацию" для режима презентации */
-        .show-info-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            z-index: 1000;
-            background: rgba(255,255,255,0.9);
-            color: #333;
-            border: none;
-            border-radius: 20px;
-            padding: 8px 15px;
-            font-size: 14px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            transition: all 0.3s;
-            display: none;
-        }
-        
-        .show-info-btn:hover {
-            background: white;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-        
-        .presentation-only .show-info-btn,
-        .presentation-mode .show-info-btn {
-            display: block;
-        }
-        
-        .info-hidden .info-panel {
-            display: none !important;
-        }
-        
-        .info-hidden .show-info-btn i {
-            transform: rotate(180deg);
-        }
-        
-        @media (max-width: 1200px) {
-            .info-panel {
-                width: 350px;
+        @media (max-width: 992px) {
+            .container {
+                height: auto;
+                min-height: 100vh;
             }
             
-            .gallery-image {
-                height: 250px;
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .subtitle {
+                font-size: 1rem;
+            }
+            
+            .content {
+                flex-direction: column;
+                min-height: auto;
+            }
+            
+            #map {
+                height: 500px;
+                width: 100%;
+                flex: none;
+            }
+            
+            .info-panel {
+                position: fixed;
+                top: 0;
+                right: 0;
+                bottom: 0;
+                width: 100%;
+                max-width: 500px;
+                z-index: 1000;
+                border-left: none;
+                border-top: 3px solid #e74c3c;
+                transform: translateX(100%);
+                transition: transform 0.3s ease;
+                padding-top: 60px;
+            }
+            
+            .info-panel.active {
+                transform: translateX(0);
+                box-shadow: -5px 0 25px rgba(0,0,0,0.2);
+            }
+            
+            .mobile-toggle {
+                display: block;
+            }
+            
+            .close-info {
+                display: block;
+            }
+            
+            .location-title {
+                font-size: 1.5rem;
+            }
+            
+            .location-description {
+                font-size: 1rem;
+            }
+            
+            .photo-gallery {
+                grid-template-columns: 1fr;
+            }
+            
+            .photo-item.main-photo {
+                grid-column: span 1;
+            }
+            
+            .photo-gallery[data-count="1"] .photo-item,
+            .photo-gallery[data-count="2"] .photo-item:first-child,
+            .photo-gallery[data-count="2"] .photo-item:nth-child(2) {
+                grid-column: span 1;
+            }
+            
+            .mobile-toggle.active i {
+                transform: rotate(180deg);
             }
         }
         
-        @media (max-width: 768px) {
+        @media (max-width: 576px) {
             body {
                 padding: 10px;
             }
             
-            .container {
-                height: calc(100vh - 20px);
-            }
-            
             header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 10px;
-            }
-            
-            .header-buttons {
-                width: 100%;
-                justify-content: space-between;
-            }
-            
-            .mode-toggle, .share-btn {
-                flex: 1;
-                justify-content: center;
-            }
-            
-            .main-content {
-                flex-direction: column;
-            }
-            
-            .edit-mode .control-panel {
-                width: 100%;
-                border-left: none;
-                border-top: 1px solid #ddd;
-                max-height: 400px;
-            }
-            
-            .edit-mode .map-container {
-                min-height: 400px;
-            }
-            
-            .info-panel {
-                width: 100%;
-                height: 60vh;
-                bottom: 0;
-                top: auto;
-                border-left: none;
-                border-top: 1px solid #ddd;
-            }
-            
-            .gallery-image {
-                height: 200px;
-            }
-            
-            .show-info-btn {
-                top: 5px;
-                right: 5px;
-                font-size: 12px;
-                padding: 6px 12px;
+                padding: 15px;
             }
             
             h1 {
                 font-size: 1.5rem;
+                margin-right: 50px;
+            }
+            
+            .subtitle {
+                font-size: 0.9rem;
+                margin-right: 50px;
+            }
+            
+            #map {
+                height: 400px;
+            }
+            
+            .info-panel {
+                max-width: 100%;
+                padding: 70px 15px 15px;
+            }
+            
+            .photo-item {
+                height: 150px;
+            }
+            
+            .photo-item.main-photo {
+                height: 200px;
+            }
+            
+            .location-info {
+                padding: 20px;
             }
         }
         
-        @media (max-width: 480px) {
-            .header-buttons {
-                flex-direction: column;
-                gap: 8px;
-            }
-            
-            .mode-toggle, .share-btn {
-                width: 100%;
-            }
-            
-            .file-input-label {
-                padding: 15px;
-            }
-            
-            .photos-preview {
-                max-height: 120px;
-            }
-            
-            .photo-preview-item {
-                width: 50px;
-                height: 50px;
-            }
-            
-            .gallery-image {
-                height: 180px;
-            }
-            
-            .info-title {
-                font-size: 1.3rem;
-            }
-            
-            .show-info-btn {
-                font-size: 11px;
-                padding: 5px 10px;
-            }
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
         }
         
-        /* Скрываем все элементы управления и атрибуции Leaflet */
+        .overlay.active {
+            display: block;
+        }
+
+        /* Спрятать атрибуцию через CSS */
         .leaflet-control-attribution {
             display: none !important;
-        }
-        
-        /* Стили для кастомной иконки */
-        .custom-div-icon {
-            background: transparent !important;
-            border: none !important;
-        }
-        
-        /* Анимация переключения режимов */
-        .container {
-            transition: all 0.3s ease;
-        }
-        
-        /* Стиль для кнопки "Назад" в режиме презентации по ссылке */
-        .back-button {
-            position: fixed;
-            top: 15px;
-            left: 15px;
-            z-index: 1000;
-            background: rgba(255,255,255,0.9);
-            color: #333;
-            border: none;
-            border-radius: 20px;
-            padding: 8px 15px;
-            font-size: 14px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            transition: all 0.3s;
-        }
-        
-        .back-button:hover {
-            background: white;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-        
-        .presentation-only .back-button {
-            display: block;
         }
     </style>
 </head>
 <body>
-    <!-- Кнопка "Назад" для режима презентации по ссылке -->
-    <button class="back-button" id="backButton" style="display: none;">
-        <i class="fas fa-arrow-left"></i> Вернуться к редактированию
-    </button>
-    
-    <!-- Кнопка для показа/скрытия информации в режиме презентации -->
-    <button class="show-info-btn" id="showInfoBtn">
-        <i class="fas fa-chevron-left"></i> Показать информацию
-    </button>
-    
-    <!-- Индикатор загрузки файлов -->
-    <div class="upload-progress" id="uploadProgress">
-        <div class="spinner">
-            <i class="fas fa-spinner fa-spin fa-2x" style="color: #667eea;"></i>
-        </div>
-        <div id="uploadText">Загрузка файлов...</div>
-        <div class="progress-bar">
-            <div class="progress-fill" id="progressFill"></div>
-        </div>
-        <div id="uploadCount">0 из 0 файлов</div>
-    </div>
-    
-    <div class="container edit-mode" id="mainContainer">
+    <div class="container">
         <header>
-            <div class="header-content">
-                <h1><i class="fas fa-map-marked-alt"></i> Моя интерактивная карта</h1>
-                <p class="subtitle" id="modeSubtitle">Режим редактирования: добавляйте новые места</p>
-            </div>
-            <div class="header-buttons">
-                <button class="share-btn" id="shareBtn">
-                    <i class="fas fa-share-alt"></i> Поделиться
-                </button>
-                <button class="mode-toggle" id="modeToggle">
-                    <i class="fas fa-tv"></i> Режим презентации
-                </button>
-            </div>
+            <h1><i class="fas fa-map-marked-alt"></i> Москва А.П. Чехова</h1>
+            <p class="subtitle">Нажмите на метку, чтобы увидеть фото, описание и прослушать аудиогид</p>
+            <button class="mobile-toggle" id="togglePanel" title="Показать/скрыть панель">
+                <i class="fas fa-info-circle"></i>
+            </button>
         </header>
         
-        <div class="main-content">
-            <div class="map-container">
-                <div id="map"></div>
+        <div class="content">
+            <div id="map"></div>
+            
+            <div class="info-panel" id="infoPanel">
+                <button class="close-info" id="closePanel" title="Закрыть">
+                    <i class="fas fa-times"></i>
+                </button>
                 
-                <!-- Панель информации о точке -->
-                <div class="info-panel" id="infoPanel">
-                    <div class="info-header">
-                        <div class="info-title" id="infoTitle">Название места</div>
-                        <button class="close-info-btn" id="closeInfoPanel">
-                            <i class="fas fa-times"></i>
-                        </button>
+                <div class="location-info active" id="info-default">
+                    <h2 class="location-title">Выберите достопримечательность</h2>
+                    <p class="location-description">Нажмите на любую метку на карте, чтобы увидеть подробную информацию, фото и прослушать аудиоописание.</p>
+                    <div style="text-align: center; margin: 30px 0;">
+                        <i class="fas fa-map-marker-alt" style="font-size: 4rem; color: #e74c3c;"></i>
+                    </div>
+                </div>
+                
+                <!-- Блоки для 15 объектов -->
+                <div class="location-info" id="info-1">
+                    <h2 class="location-title">Название места 1</h2>
+                    <p class="location-description">Описание места 1...</p>
+                    <div class="photo-gallery" id="gallery-1"></div>
+                    <div class="audio-player">
+                        <span class="audio-label"><i class="fas fa-volume-up"></i> Аудиогид:</span>
+                        <audio controls>
+                            <source src="" type="audio/mpeg">
+                            Ваш браузер не поддерживает аудио элемент.
+                        </audio>
+                    </div>
+                </div>
+                
+                <div class="location-info" id="info-2">
+                    <h2 class="location-title">Название места 2</h2>
+                    <p class="location-description">Описание места 2...</p>
+                    <div class="photo-gallery" id="gallery-2"></div>
+                    <div class="audio-player">
+                        <span class="audio-label"><i class="fas fa-volume-up"></i> Аудиогид:</span>
+                        <audio controls>
+                            <source src="" type="audio/mpeg">
+                            Ваш браузер не поддерживает аудио элемент.
+                        </audio>
+                    </div>
+                </div>
+                
+                <!-- Остальные объекты 3-15 -->
+                <div class="location-info" id="info-3">
+                    <h2 class="location-title">Название места 3</h2>
+                    <p class="location-description">Описание места 3...</p>
+                    <div class="photo-gallery" id="gallery-3"></div>
+                    <div class="audio-player">
+                        <span class="audio-label"><i class="fas fa-volume-up"></i> Аудиогид:</span>
+                        <audio controls>
+                            <source src="" type="audio/mpeg">
+                            Ваш браузер не поддерживает аудио элемент.
+                        </audio>
+                    </div>
+                </div>
+                
+                <div class="location-info" id="info-4">
+                    <h2 class="location-title">Название места 4</h2>
+                    <p class="location-description">Описание места 4...</p>
+                    <div class="photo-gallery" id="gallery-4"></div>
+                    <div class="audio-player">
+                        <span class="audio-label"><i class="fas fa-volume-up"></i> Аудиогид:</span>
+                        <audio controls>
+                            <source src="" type="audio/mpeg">
+                            Ваш браузер не поддерживает аудио элемент.
+                        </audio>
+                    </div>
+                </div>
+                
+                <div class="location-info" id="info-5">
+                    <h2 class="location-title">Название места 5</h2>
+                    <p class="location-description">Описание места 5...</p>
+                    <div class="photo-gallery" id="gallery-5"></div>
+                    <div class="audio-player">
+                        <span class="audio-label"><i class="fas fa-volume-up"></i> Аудиогид:</span>
+                        <audio controls>
+                            <source src="" type="audio/mpeg">
+                            Ваш браузер не поддерживает аудио элемент.
+                        </audio>
+                    </div>
+                </div>
+                
+                <div class="location-info" id="info-6">
+                    <h2 class="location-title">Название места 6</h2>
+                    <p class="location-description">Описание места 6...</p>
+                    <div class="photo-gallery" id="gallery-6"></div>
+                    <div class="audio-player">
+                        <span class="audio-label"><i class="fas fa-volume-up"></i> Аудиогид:</span>
+                        <audio controls>
+                            <source src="" type="audio/mpeg">
+                            Ваш браузер не поддерживает аудио элемент.
+                        </audio>
+                    </div>
+                </div>
+                
+                <div class="location-info" id="info-7">
+                    <h2 class="location-title">Название места 7</h2>
+                    <p class="location-description">Описание места 7...</p>
+                    <div class="photo-gallery" id="gallery-7"></div>
+                    <div class="audio-player">
+                        <span class="audio-label"><i class="fas fa-volume-up"></i> Аудиогид:</span>
+                        <audio controls>
+                            <source src="" type="audio/mpeg">
+                            Ваш браузер не поддерживает аудио элемент.
+                        </audio>
+                    </div>
+                </div>
+                
+                <div class="location-info" id="info-8">
+                    <h2 class="location-title">Название места 8</h2>
+                    <p class="location-description">Описание места 8...</p>
+                    <div class="photo-gallery" id="gallery-8"></div>
+                    <div class="audio-player">
+                        <span class="audio-label"><i class="fas fa-volume-up"></i> Аудиогид:</span>
+                        <audio controls>
+                            <source src="" type="audio/mpeg">
+                            Ваш браузер не поддерживает аудио элемент.
+                        </audio>
+                    </div>
+                </div>
+                
+                <div class="location-info" id="info-9">
+                    <h2 class="location-title">Название места 9</h2>
+                    <p class="location-description">Описание места 9...</p>
+                    <div class="photo-gallery" id="gallery-9"></div>
+                    <div class="audio-player">
+                        <span class="audio-label"><i class="fas fa-volume-up"></i> Аудиогид:</span>
+                        <audio controls>
+                            <source src="" type="audio/mpeg">
+                            Ваш браузер не поддерживает аудио элемент.
+                        </audio>
+                    </div>
+                </div>
+                
+                <div class="location-info" id="info-10">
+                    <h2 class="location-title">Название места 10</h2>
+                    <p class="location-description">Описание места 10...</p>
+                    <div class="photo-gallery" id="gallery-10"></div>
+                    <div class="audio-player">
+                        <span class="audio-label"><i class="fas fa-volume-up"></i> Аудиогид:</span>
+                        <audio controls>
+                            <source src="" type="audio/mpeg">
+                            Ваш браузер не поддерживает аудио элемент.
+                        </audio>
+                    </div>
+                </div>
+                
+                <div class="location-info" id="info-11">
+                    <h2 class="location-title">Название места 11</h2>
+                    <p class="location-description">Описание места 11...</p>
+                    <div class="photo-gallery" id="gallery-11"></div>
+                    <div class="audio-player">
+                        <span class="audio-label"><i class="fas fa-volume-up"></i> Аудиогид:</span>
+                        <audio controls>
+                            <source src="" type="audio/mpeg">
+                            Ваш браузер не поддерживает аудио элемент.
+                        </audio>
+                    </div>
+                </div>
+                
+                <div class="location-info" id="info-12">
+                    <h2 class="location-title">Название места 12</h2>
+                    <p class="location-description">Описание места 12...</p>
+                    <div class="photo-gallery" id="gallery-12"></div>
+                    <div class="audio-player">
+                        <span class="audio-label"><i class="fas fa-volume-up"></i> Аудиогид:</span>
+                        <audio controls>
+                            <source src="" type="audio/mpeg">
+                            Ваш браузер не поддерживает аудио элемент.
+                        </audio>
+                    </div>
+                </div>
+                
+                <div class="location-info" id="info-13">
+                    <h2 class="location-title">Название места 13</h2>
+                    <p class="location-description">Описание места 13...</p>
+                    <div class="photo-gallery" id="gallery-13"></div>
+                    <div class="audio-player">
+                        <span class="audio-label"><i class="fas fa-volume-up"></i> Аудиогид:</span>
+                        <audio controls>
+                            <source src="" type="audio/mpeg">
+                            Ваш браузер не поддерживает аудио элемент.
+                        </audio>
+                    </div>
+                </div>
+                
+                <div class="location-info" id="info-14">
+                    <h2 class="location-title">Название места 14</h2>
+                    <p class="location-description">Описание места 14...</p>
+                    <div class="photo-gallery" id="gallery-14"></div>
+                    <div class="audio-player">
+                        <span class="audio-label"><i class="fas fa-volume-up"></i> Аудиогид:</span>
+                        <audio controls>
+                            <source src="" type="audio/mpeg">
+                            Ваш браузер не поддерживает аудио элемент.
+                        </audio>
+                    </div>
+                </div>
+                
+                <div class="location-info" id="info-15">
+                    <h2 class="location-title">Название места 15</h2>
+                    <p class="location-description">Описание места 15...</p>
+                    <div class="photo-gallery" id="gallery-15"></div>
+                    <div class="audio-player">
+                        <span class="audio-label"><i class="fas fa-volume-up"></i> Аудиогид:</span>
+                        <audio controls>
+                            <source src="" type="audio/mpeg">
+                            Ваш браузер не поддерживает аудио элемент.
+                        </audio>
+                    </div>
+                </div>
+                
+                <div class="legend">
+                    <h3><i class="fas fa-key"></i> Легенда карты</h3>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #e74c3c;"></div>
+                        <span>Все достопримечательности</span>
                     </div>
                     
-                    <div class="info-content" id="infoContent">
-                        <!-- Содержимое будет заполняться динамически -->
-                    </div>
-                </div>
-            </div>
-            
-            <div class="control-panel">
-                <div class="form-group">
-                    <label for="locationName">Название места:</label>
-                    <input type="text" id="locationName" placeholder="Введите название">
-                </div>
-                
-                <div class="form-group">
-                    <label for="latitude">Широта:</label>
-                    <input type="number" id="latitude" step="any" placeholder="55.7558">
-                </div>
-                
-                <div class="form-group">
-                    <label for="longitude">Долгота:</label>
-                    <input type="number" id="longitude" step="any" placeholder="37.6173">
-                </div>
-                
-                <div class="form-group">
-                    <label for="description">Описание:</label>
-                    <textarea id="description" placeholder="Опишите это место"></textarea>
-                </div>
-                
-                <div class="form-group">
-                    <label>Фотографии:</label>
-                    <div class="file-input-group">
-                        <div class="file-input-container">
-                            <label class="file-input-label" for="photoUpload">
-                                <i class="fas fa-cloud-upload-alt"></i>
-                                <span>Загрузите фото</span>
-                                <small>Нажмите или перетащите файлы (JPG, PNG)</small>
-                            </label>
-                            <input type="file" id="photoUpload" class="file-input" accept="image/*" multiple>
-                        </div>
-                        <div class="file-info">
-                            Можно загрузить несколько фото (макс. 10 файлов по 5 МБ)
-                        </div>
-                    </div>
-                    <div class="photos-preview" id="photosPreview">
-                        <!-- Превью фото будут добавляться здесь -->
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label>Аудиофайл:</label>
-                    <div class="file-input-group">
-                        <div class="file-input-container">
-                            <label class="file-input-label" for="audioUpload" style="padding: 15px;">
-                                <i class="fas fa-file-audio"></i>
-                                <span>Загрузите аудио</span>
-                                <small>MP3, WAV, OGG (макс. 10 МБ)</small>
-                            </label>
-                            <input type="file" id="audioUpload" class="file-input" accept="audio/*">
-                        </div>
-                    </div>
-                    <div class="audio-preview" id="audioPreview" style="display: none;">
-                        <!-- Превью аудио будет добавляться здесь -->
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="markerColor">Цвет маркера:</label>
-                    <select id="markerColor">
-                        <option value="#e74c3c">Красный</option>
-                        <option value="#3498db" selected>Синий</option>
-                        <option value="#2ecc71">Зеленый</option>
-                        <option value="#f39c12">Оранжевый</option>
-                        <option value="#9b59b6">Фиолетовый</option>
-                        <option value="#1abc9c">Бирюзовый</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="markerIcon">Иконка маркера:</label>
-                    <select id="markerIcon">
-                        <option value="fa-map-marker-alt" selected>📍 Метка</option>
-                        <option value="fa-landmark">🏛️ Памятник</option>
-                        <option value="fa-tree">🌳 Природа</option>
-                        <option value="fa-building">🏢 Здание</option>
-                        <option value="fa-utensils">🍽️ Ресторан</option>
-                        <option value="fa-bed">🏨 Отель</option>
-                        <option value="fa-museum">🏛️ Музей</option>
-                        <option value="fa-church">⛪ Церковь</option>
-                        <option value="fa-park">🌿 Парк</option>
-                        <option value="fa-camera">📷 Фото-точка</option>
-                    </select>
-                </div>
-                
-                <div class="button-group">
-                    <button class="btn-primary" onclick="addLocation()">
-                        <i class="fas fa-plus"></i> Добавить место
+                    <button class="start-tour" onclick="startTour()">
+                        <i class="fas fa-play-circle"></i> Начать аудиотур
                     </button>
-                    <button class="btn-secondary" onclick="clearForm()">
-                        <i class="fas fa-eraser"></i> Очистить
-                    </button>
-                </div>
-                
-                <div class="locations-list" id="locationsList">
-                    <h3 style="font-size: 16px; margin-bottom: 10px;">Добавленные места (0)</h3>
-                    <!-- Список мест будет добавляться здесь -->
                 </div>
             </div>
         </div>
         
-        <div class="status-bar" id="statusBar">
-            Карта готова. Нажмите на карту для получения координат.
-        </div>
-    </div>
-    
-    <!-- Модальное окно для ссылки -->
-    <div class="modal-overlay" id="shareModal">
-        <div class="modal">
-            <h2><i class="fas fa-share-alt"></i> Поделиться картой</h2>
-            <p>Создайте ссылку для просмотра карты в режиме презентации. Эту ссылку можно отправить другим людям.</p>
-            
-            <div class="link-container">
-                <input type="text" readonly class="link-input" id="presentationLink">
-                <button class="copy-btn" id="copyLinkBtn">
-                    <i class="far fa-copy"></i> Копировать
+        <!-- Модальное окно для просмотра фото -->
+        <div class="modal-overlay" id="photoModal">
+            <div class="modal-content">
+                <button class="close-modal" onclick="closeModal()">
+                    <i class="fas fa-times"></i>
                 </button>
-            </div>
-            
-            <div class="qr-code" id="qrCode">
-                <!-- QR-код будет сгенерирован здесь -->
-                <p style="color: #666; font-size: 14px;">QR-код для мобильных устройств</p>
-                <canvas id="qrCanvas" width="200" height="200"></canvas>
-            </div>
-            
-            <div class="modal-buttons">
-                <button class="close-modal" id="closeModal">
-                    Закрыть
-                </button>
+                <img class="modal-img" id="modalImage" src="" alt="Увеличенное фото">
             </div>
         </div>
+        
+        <div class="overlay" id="overlay"></div>
+        
+        <footer>
+            <p></p>
+        </footer>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <!-- Библиотека для QR-кода -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-        <script>
-    // ... остальной код без изменений до функции saveMapData() ...
+    <script>
+        // ФУНКЦИЯ ДЛЯ ЭКРАНИРОВАНИЯ КАВЫЧЕК
+        function escapeQuotes(text) {
+            if (!text) return '';
+            return text
+                .replace(/\\/g, '\\\\')  // экранируем обратные слеши
+                .replace(/'/g, "\\'")    // экранируем одинарные кавычки
+                .replace(/"/g, '\\"')    // экранируем двойные кавычки
+                .replace(/\n/g, '\\n')   // экранируем переносы строк
+                .replace(/\r/g, '\\r')   // экранируем возврат каретки
+                .replace(/\t/g, '\\t');  // экранируем табуляцию
+        }
+        
+        // ФУНКЦИЯ ДЛЯ ДЕЭКРАНИРОВАНИЯ ТЕКСТА ПРИ ПОКАЗЕ
+        function unescapeText(text) {
+            if (!text) return '';
+            return text
+                .replace(/\\'/g, "'")    // восстанавливаем одинарные кавычки
+                .replace(/\\"/g, '"')    // восстанавливаем двойные кавычки
+                .replace(/\\n/g, '\n')   // восстанавливаем переносы строк
+                .replace(/\\r/g, '\r')   // восстанавливаем возврат каретки
+                .replace(/\\t/g, '\t')   // восстанавливаем табуляцию
+                .replace(/\\\\/g, '\\'); // восстанавливаем обратные слеши
+        }
 
-    // Функция сохранения данных карты в localStorage
-    function saveMapData() {
-        // Подготавливаем данные для сохранения
-        const mapData = {
-            id: mapId,
-            locations: locations.map(location => ({
-                id: location.id,
-                name: location.name,
-                lat: location.lat,
-                lng: location.lng,
-                description: location.description,
-                photos: location.photos,
-                audioUrl: location.audioUrl,
-                color: location.color,
-                icon: location.icon
-            })),
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        };
+        // МАССИВ ДОСТОПРИМЕЧАТЕЛЬНОСТЕЙ С ЭКРАНИРОВАННЫМИ ТЕКСТАМИ
+        const attractions = [
+            // Объект 1 - 7 фото
+                        {
+                id: 1,
+                name: "Дом на Трубной, 23",
+                lat: 55.771059,
+                lng: 37.625010,
+                description: "В связи с тяжелым финансовым положением семьи, после переезда из Таганрога, Чеховы были вынуждены поселиться в одном из самых бедных и неблагополучных районов того времени, на улицах Сретенки и Трубной. Именно сюда, на ул. Трубную, 36 (которая в то время называлась ул. Грачевка) 8 августа 1879 года Антон Чехов приезжает к своей семье, где Чеховы живут в подвальном этаже и где ‘‘пахло сыростью и через окна под потолком виднелись одни только пятки прохожих’‘. Чехов подает прошение на имя ректора Московского университета о приеме на 1-й курс Медицинского факультета и с сентября числится студентом. 20 сентября 1879 года Чеховы переезжают в дом 23 по Трубной улице. Здесь они занимают второй этаж, и, по воспоминаниям Михаила Чехова, младшего брата писателя,  именно ‘‘с этой квартиры началась литературная деятельность брата’‘. Он же пишет в книге ‘‘Вокруг Чехова’‘: ‘‘Так как отец в это время жил у Гаврилова, то волею судеб его место в семье занял брат Антон и стал как бы за хозяина. Личность отца отошла на задний план. Воля Антона сделалась доминирующей. В нашей семье появились вдруг неизвестные мне дотоле резкие отрывочные замечания: “Это неправда”, “Нужно быть справедливым”, “Не надо лгать” и так далее. Началась совместная работа по поднятию материального положения семьи. Работали все, кто как мог и умел’‘. Впечатления от жизни ‘‘на дне’‘ Москвы позже легли в основу таких рассказов, как ‘‘Припадок’‘, ‘‘Воры’‘, очерка ‘‘На Грачевке’‘. Это был суровый, но очень важный жизненный опыт.",
+                audio: "audio/2.mp3", // Локальный файл
+                photos: [
+                    "obj1/i1.png",
+                    "obj1/i2.png",
+                    "obj1/i3.png",
+                    "obj1/i4.png",
+                    "obj1/i5.png",
+                    "obj1/i6.png",
+                    "obj1/i7.png"
+                ]
+            },
+            // Объект 2 - 7 фото
+            {
+                id: 2,
+                name: "Трубная площадь",
+                lat: 55.767377,
+                lng: 37.622172,
+                // Пример с цитатами и спецсимволами
+                description: "Трубная площадь. Трубная площадь образовалась на месте, где в XVII в. река Неглинная пересекалась с крепостной стеной Белого города. Она протекала через отверстие, закрытое решёткой. Поскольку толщина стены была около 5 м, то дыру назвали ‘‘трубой’‘. В 1780-х гг. разобрали стены, а в 1817-1819 гг. реку заключили в подземный коллектор. Освободившееся пространство получило название Трубная площадь. В 1840х сюда из охотнтго ряда перевели  птичий рынок, который был описан чеховым в рассказе в москве на трубной площади. Антон Павлович бывал в этом месте. Чехов писал о: ‘‘Небольшая площадь близ Рождественского монастыря, которую называют Трубной, или просто Трубой; по воскресеньям на ней бывает торг. <…> И Труба, этот небольшой кусочек Москвы, где животных любят так нежно и где их так мучают, живет своей маленькой жизнью, шумит и волнуется, и тем деловым и богомольным людям, которые проходят мимо по бульвару, непонятно, зачем собралась эта толпа людей, эта пестрая смесь шапок, картузов и цилиндров, о чем тут говорят, чем торгуют’‘.",
+                audio: "audio/1.mp3",
+                photos: [
+                    "obj2/i1.png",
+                    "obj2/i2.png",
+                    "obj2/i3.png",
+                    "obj2/i4.png",
+                    "obj2/i5.png",
+                    "obj2/i6.png",
+                    "obj2/i7.png"
+                ]
+            },
+            // Объект 3 - 7 фото
+            {
+                id: 3,
+                name: "Ресторан Эрмитаж (Улица Большая Дмитровка, дом 22) (ныне Московский театр ‘‘Школа современной пьесы’‘)",
+                lat: 55.763923,
+                lng: 37.613395,
+                // Пример с апострофами и кавычками
+                description: "Ресторан ‘‘Эрмитаж’‘, принадлежал московскому купцу Якову Пегову и французскому кулинару Люсьену Оливье, изобретателю знаменитого салата. Как гласит московская легенда,  ‘‘Эрмитаж’‘ возник вследствие пристрастия  Люсьена Оливье и  Якова Пегова к нюхательному табаку. А лучший табак в Москве делал будочник на Трубе. Вот у этого будочника и произошло их историческое знакомство, переросшее впоследствии в общее дело – новый московский трактир. ‘‘Эрмитаж’‘ был местом встреч и обедов московской интеллигенции. В апреле 1879 года отмечал здесь свой юбилей И. С. Тургенев, тут же отмечали юбилей Ф.М. Достоевского, столетие со дня рождения А. С. Пушкина, выступали Шаляпин и СОбинов. Часто бывал в ресторане и Антон Павлович. 22 марта 1897 года на обеде в ресторане ‘‘Эрмитаж’‘ у него пошла горлом кровь. 25 марта давний приятель Чехова доктор Николай николаевич Оболонский отвез его в клинику внутренних болезней профессора Алексея александровича Остроумова. Тут писателя навещает Алексей сергеевич Суворин, который затем пишет (‘‘Больной смеется, шутит по своему обыкновению, отхаркивая кровь в большой стакан’‘) и Л.Н. Толстой (у Чехова об этом: ‘‘Вели мы преинтересный разговор, преинтересный для меня, потому что я больше слушал, чем говорил. Говорили о бессмертии’‘). После Октябрьской революции 1917 годаресторан закрылся. Сейчас место эрмитажа занимает театр ‘‘школа современной пьесы’‘. Театр открылся 27 марта 1989 года спектаклем Иосифа Райхельгауза ‘‘Пришёл мужчина к женщине’‘. В конце того же года театр получил в своё распоряжение здание на Трубной площади, в прошлом — ресторан ‘‘Эрмитаж’‘.",
+                audio: "audio/3.mp3",
+                photos: [
+                    "obj3/i1.png",
+                    "obj3/i2.png",
+                    "obj3/i3.png",
+                    "obj3/i4.png",
+                    "obj3/i5.png",
+                    "obj3/i6.png",
+                    "obj3/i7.png"
+                ]
+            },
+            // Остальные объекты (4-15) - здесь будут ваши данные
+            {
+                id: 4,
+                name: "Доходный дом Р.П. Саблина (ЦАО, Леонтьевский пер., дом 24)",
+                lat: 55.761988,
+                lng: 37.606855,
+                description: "Дом 24 в Леонтьевском переулке связан с последними днями пребывания Чехова в Москве. Здесь на четвертом этаже (в доме был лифт) он прожил с 3 мая по 3 июня 1904 года. Сильно простуженный, изможденный, Антон Павлович никуда не выходил из дома, не ездил даже в редакцию ‘‘Русской мысли’‘. Чехова навещали И.Д. Сытин, В.А. Гиляровский, Г.И. Россолимо и другие, врачи же в голос твердили, что надо ехать на лечению за границу, на курорты. В конце концов он решился. Н.Д. Телешов вспоминал: ‘‘Умирать еду, – говорил А.П. Чехов. – Поклонитесь от меня товарищам вашим по ‘‘Среде’‘. Хороший народ у вас подобрался. Скажите им, что я их помню и некоторых очень люблю… Пожелайте им от меня счастья и успеха. Больше мы уже не встретимся…’‘ 3 июня 1904 г. А.П. Чехов и О.Л. Книппер выехали в Германию. 2 (15) июля 1904 г. в небольшом городке Баденвейлер писатель умер…",
+                audio: "audio/4.mp3",
+                photos: [
+                    "obj4/i1.png",
+                    "obj4/i2.png"
+                ]
+            },
+            {
+                id: 5,
+                name: "Дом Глебовых-Стрешневых (ЦАО, Никитская Б. ул., дом 19/16, строение 1)",
+                lat: 55.757009,
+                lng: 37.600846,
+                description: "У этого дома очень богатая история, но нас интересует 1883 год, когда здесь появилась редакция сатирического журнала ‘‘Будильник’‘. Это еженедельное издание с двумя тысячами подписчиков, для которого пишут, а следовательно, и бывают здесь И. И. Дмитриев, Ф. М. Решетников, М. М. Степановский, Г. И. Успенский… И Антон Павлович Чехов. Рисунки в журнал под псевдонимами ‘‘Ф. Ш.’‘ и ‘‘Финь-Шампань’‘ делает молодой Федор Осипович Шехтель, тогда еще только помощник архитекторов Каминского и Терского.",
+                audio: "audio/5.mp3",
+                photos: [
+                    "obj5/i1.png",
+                    "obj5/i2.png"
+                ]
+            },
+            {
+                id: 6,
+                name: "Московский Императорский Университет (Моховая улица, д. 11, стр. 1).",
+                lat: 55.756189,
+                lng: 37.611410,
+                // Пример с апострофами и кавычками
+                description: "Главный корпус Императорского Московского университета на Моховой улице, в котором учился Антон Павлович Чехов, сохранился до наших дней. Старое классическое здание университета с ионическим портиком на Моховой улице, построенное в 1793 году архитектором Матвеем Федоровичем Казаковым, сильно пострадало во время войны 1812 года и было перестроено по проекту архитектора ДомЕнико ЖилЯрди в 1817—1819 годах в стиле ампИр. Здесь обучались студенты трех факультетов: философского, медицинского и правового. В настоящее время комплекс занимают фонды библиотеки, Антропологический музей и Музей истории университета, Институт стран Азии и Африки, основанный в 1956-м на базе исторического и филологического факультетов. В здании регулярно проводят научные конференции и фестивали. В университете будущий писатель проучился пять лет. Медицинский факультет всегда был самым сложным. За годы учебы Чехов, как и его однокурсники, сдал больше шестидесяти экзаменов, больше сорока зачетов, занимался в анатомическом театре, проходил практику в клиниках. В те годы на медицинском факультете Московского университета преподавали выдающиеся ученые. В ‘‘Скучной истории’‘ Чехов упоминает об основателе московской школы гистологов Александре Ивановиче Бабухине, как об одном из крупнейших ученых. К числу незаурядных ученых принадлежал руководитель терапевтической госпитальной клиники Алексей Александрович Остроумов. В 1897 году и самому Чехову довелось лежать в клинике своего учителя. Попал он к нему с тяжелым приступом легочного кровотечения. В одном из своих писем Чехов сказал: ‘‘Из писателей предпочитаю Толстого, а из врачей — Захарьина’‘. Григорий Антонович Захарьин — звезда первой величины среди университетских наставников писателя. Он по праву считался крупнейшим русским терапевтом и клиницистом конца XIX века. Учителями Чехова были и другие выдающиеся ученые — Фёдор Федорович Эрисман, Николай Васильевич Склифосовский, Алексей Яковлевич Кожевников, Нил Федорович Филатов, Сергей Сергеевич Корсаков. Особо надо упомянуть о Клименте Аркадьевиче Тимирязеве — блестящем ученом и публицисте, неутомимом борце за материалистическое естествознание. Уже в начале девятисотых годов Чехов писал о нем: ‘‘...Тимирязев, человек, которого... я очень уважаю и люблю’‘. В повести “Скучная история” позже Чехов опишет свои первые впечатления об университете: “А вот мрачные, давно не ремонтированные университетские ворота; скучающий дворник в тулупе, метла, кучи снега… На свежего мальчика, приехавшего из провинции и воображающего, что храм науки - в самом деле храм, такие ворота не могут произвести здорового впечатления. Вообще ветхость университетских построек, мрачность коридоров, копоть стен, недостаток света, унылый вид ступеней, вешалок и скамей в истории русского пессимизма занимают одно из первых мест на ряду причин предрасполагающих…”",
+                audio: "audio/6.mp3",
+                photos: [
+                    "obj6/i1.png",
+                    "obj6/i2.png",
+                    "obj6/i3.png"
+                ]
+            },
+            {
+                id: 7,
+                name: "МХТ имени А. П. Чехова (Камергерский переулок, дом 3)",
+                lat: 55.760236,
+                lng: 37.612991,
+                // Пример с апострофами и кавычками
+                description: "История здания началась еще в XVIII веке, каждый новый владелец перестраивал его под свои нужды, пока промышленник и меценат Савва Морозов не арендовал его для МХТ. Архитектор Федор Шехтель подарил зданию новую жизнь, придал ему черты стиля модерн и реконструировал сцену и зрительный зал в тандеме с художественными руководителями МХТ, К. С. Станиславским и В. И. Немировичем-Данченко. История театра: Основание (1898): Театр был создан двумя реформаторами сцены — Константином Станиславским (богатый промышленник, актер-любитель) и Владимиром Немировичем-Данченко (известный драматург и педагог). Их знаменитая 18-часовая беседа в московском ресторане ‘‘Славянский базар’‘ положила начало новому искусству. Новаторство: МХТ с самого начала был театром-антиподом старой, ‘‘казенной’‘ сцены. Правда чувств: Отказ от наигранной театральности в пользу жизненной достоверности. Ансамбль: Уничтожение ‘‘системы звезд’‘, где все актеры, даже в маленьких ролях, работают на общую идею. Режиссер — главный: Впервые режиссер стал ключевой фигурой, автором спектакля. Новая драматургия: Пьесы Чехова и Горького стали художественным манифестом театра. Раскол и современность (1987): К концу XX века театр, носивший имя Горького (МХАТ), переживал кризис. В 1987 году он официально разделился на два самостоятельных театра: МХАТ им. А. П. Чехова (под руководством Олега Ефремова, а затем — Табаков) — сохранил историческое здание в Камергерском переулке и продолжил традиции в современном ключе. МХАТ им. М. Горького (под руководством Татьяны Дорониной) — базируется на Тверской улице и следует более консервативному направлению. Премьера ‘‘Чайки’‘ – начало Театра Чехова Чеховская чайка стала эмблемой нового театра неслучайно. Вл.И. Немирович-Данченко в своей книге ‘‘Из прошлого’‘ писал о судьбоносной встрече в ‘‘Славянском базаре’‘: ‘‘Мы эгоистично, глубоко эгоистично, обсуждали наш театр, наш, вот театр Станиславского и мой. Театром Чехова он станет потом и совершенно неожиданно для нас самих’‘. Начиная с ‘‘Чайки’‘, премьера которой прошла 29 декабря 1898 года, и вплоть до смерти Чехова, на сцене Художественного театра каждый сезон появлялась новая его пьеса. ‘‘Три сестры’‘ и ‘‘Вишневый сад’‘ были написаны специально для МХТ.В работе над пьесами Чехова определился новый тип актера, сложился сценический ансамбль артистических дарований.",
+                audio: "audio/7.mp3",
+                photos: [
+                    "obj7/i1.png",
+                    "obj7/i2.png",
+                    "obj7/i3.png",
+                    "obj7/i4.png",
+                ]
+            },
+            {
+                id: 8,
+                name: "Гостиница Дрезден (Тверская ул., дом 6, строение 2) ",
+                lat: 55.761523,
+                lng: 37.623081,
+                // Пример с апострофами и кавычками
+                description: "Знаменитая гостиница того времени, где часто останавливалась русская интеллигенция.   Здесь, в гостинице ‘‘Дрезден’‘, ныне поглощенной вместе с древними палатами большим зданием, останавливался Чехов в конце октября 1900 года. Правда, как писал Антон Павлович, ‘‘….в ‘‘Дрездене’‘ я только ночую, живу же на Мал. Дмитровке, д. Шешкова’‘ (мы там еще окажемся). В ‘‘Дрездене’‘ писатель вторично остановился в мае 1901 года. В этой гостинице писатель встречался с М. Горьким и К. Станиславским.   А мы идем дальше и пройдем мимо места (угол Большой Дмитровки и Столешникова), где еще не так давно стоял дом с магазином, в котором А.П. Чехов любил покупать пенсне.",
+                audio: "audio/8.mp3",
+                photos: [
+                    "obj8/i1.png",
+                    "obj8/i2.png",
+                ]
+            },
+            {
+                id: 9,
+                name: "Дом Карзинкина (Столешников пер., дом 9, стр. 1, 3, 4, 5)",
+                lat: 55.763179,
+                lng: 37.615165,
+                // Пример с апострофами и кавычками
+                description: "Дом Карзинкина связан с дружбой Чехова и Гиляросвкого, Гиляровский жил в этом доме с 1886 по 1935 год в квартире №10 на третьем этаже. Чехов дружил с писателем и любил гостить у него. Гиляровский вообще с людьми сходился легко. Сразу со всеми был на ‘‘ты’‘, демонстрировал мускулы, сгибал копейки, закручивал спиралью чайные ложки, шумно угощал табаком, показывал карточные фокусы. Чехова все это восхищало: ‘‘Не человек, курьерский поезд. Остановка пять минут. Буфет’‘. Гиляй стал для Антона Павловича неисчерпаемым источником сюжетов. К примеру, рассказал как-то о собачке, сбежавшей в Тамбове от хозяев и попавшей в цирк, и родилась чеховская ‘‘Каштанка’‘. В другой раз Гиляровский поведал о живущем по соседству крестьянине Никите, который ворует на железной дороге гайки для грузил, и Чехов написал ‘‘Злоумышленника’‘. А уж сколько словечек и забористых выражений Гиляя вошли в знаменитую чеховскую записную книжку! ‘‘Человек ты талантливый, — говаривал Чехов другу. — Но на сцене не смотришься. Тебе бы писать!’‘) В квартире на третьем этаже дома 9 Гиляровский написал ‘‘Москва и москвичи’‘. Чехов любил бывать у Гиляровского и отдыхать на диване, который называл ‘‘вагончиком’‘.   Все тот же Гиляровский вспоминал потом, как они с Чеховым подшутили над городовым, сунув ему соленый арбуз под видом бомбы, да и поехали пить чай в Столешников, в то время как около участка, куда ‘‘бомба’‘ была доставлена, развернулось целое представление.",
+                audio: "audio/9.mp3",
+                photos: [
+                    "obj9/i1.png",
+                    "obj9/i2.png",
+                ]
+            },
+            {
+                id: 10,
+                name: "Дом Коровина (ЦАО, Петровка ул., дом 19, строение 5)",
+                lat: 55.765134,
+                lng: 37.615246,
+                // Пример с апострофами и кавычками
+                description: "Приехав в Москву 24 апреля 1903 года, Чехов поселился здесь, в доме Коровина Писатель снимал квартиру в надворном корпусе (справа, за аркой) - ‘‘во дворе, прямо, потом направо, потом налево, потом подъезд направо, третий этаж’‘. В этой квартире впервые читали пьесу ‘‘Вишневый сад’‘, в саду ‘‘Эрмитаж’‘ в то же время шли репетиции.  А.П. Чехов в письме писал: “Квартира великолепна…порядок примерный”. Но подниматься по лестнице на третий этаж было для больного писателя, как он выражался, “подвигом великомученика”.",
+                audio: "audio/10.mp3",
+                photos: [
+                    "obj10/i1.png",
+                    "obj10/i2.png",
+                    "obj10/i3.png"
+                ]
+            },
+           {
+                id: 11,
+                name: "Театр Наций (ЦАО, Петровский пер., дом 3, строение 1)",
+                lat: 55.765944,
+                lng: 37.612748,
+                // Пример с апострофами и кавычками
+                description: "Мы не можем не подойти. Ведь театральная деятельность Чехова связана прежде всего с Петровским переулком и этим зданием. На сцене театра впервые была поставлена пьеса “Иванов”. - 1887 год.",
+                audio: "audio/11.mp3",
+                photos: [
+                    "obj11/i1.png",
+                    "obj11/i2.png",
+                    "obj11/i3.png",
+                    "obj11/i4.png",
+                    "obj11/i5.png",
+                ]
+            },
+            {
+                id: 12,
+                name: "Ново-Екатерининская больница (Страстной бульвар, 15/29с1)",
+                lat: 55.768527,
+                lng: 37.611985,
+                // Пример с апострофами и кавычками
+                description: "На Страстном бульваре у Петровских ворот во времена студенчества Чехова здесь находились госпитальные клиники. В 1883-1884 годах Антон Павлович наблюдал больных в терапевтической клинике и в клинике нервных болезней, сдавал зачеты и занимался хирургией. Заключительный курс был особенно труден: предстояли выпускные экзамены. ‘‘Спать ужасно хочется, – сообщал Чехов Н.А. Лейкину в январе 1884 г., – 3 часа ночи. Завтра надо рано вставать и идти в клиники…’‘.",
+                audio: "audio/12.mp3",
+                photos: [
+                    "obj12/i1.png",
+                    "obj12/i2.png",
+                    "obj12/i3.png",
+                    "obj12/i4.png",
+                ]
+            },
+            {
+                id: 13,
+                name: "Московский театр ‘‘Новая опера’‘ им. Е.В. Колобова (улица Каретный Ряд, 3, стр 2)",
+                lat: 55.771585,
+                lng: 37.609092,
+                // Пример с апострофами и кавычками
+                description: "Хоть в саду ничего практически и не сохранилось, мы все же зайдем сюда. Ведь премьера “Чайки” состоялась в Художественном театре 17 декабря 1898 года в арендованном помещении “Эрмитажа”. В этом же помещении театр показал современникам премьеры еще двух пьес А.П. Чехова “Дядя Ваня” (26 ноября 1899 года) и “Три сестры” (31 января 1901 года). ",
+                audio: "audio/13.mp3",
+                photos: [
+                    "obj13/i1.png",
+                    "obj13/i2.png",
+                    "obj13/i3.png",
+                    "obj13/i4.png",
+                    "obj13/i5.png",
+                    "obj13/i6.png",
+                ]
+            },
+            {
+                id: 14,
+                name: "Доходный дом купца А.А. Шешкова (улица Малая Дмитровка, 11)",
+                lat: 55.768831,
+                lng: 37.605310,
+                // Пример с апострофами и кавычками
+                description: " Дом Шешкова, кв. 14 - вот новый адрес Чехова. Вход в квартиру был с Дегтярного переулка. Родным писатель сообщал, что квартиру эту нанял на целый год. Однако 25 августа 1899 года он уехал в Ялту, откуда вернулся в этот дом в октябре 1900 года и жил здесь до 10 декабря того же года. В этом доме 27 апреля 1899 года его посетил Л.Н. Толстой, но, как писал сам Чехов, ‘‘…поговорить с ним не удалось, так как было много всякого народу, в том числе два актера, глубоко убежденные, что выше театра нет ничего на свете’‘. На квартире у Чехова также бывали А.М. Горький, В.И. Немирович-Данченко, И.И. Левитан, И.А. Бунин, В.А. Гиляровский. В этой квартире жила и сестра писателя М.П. Чехова, преподававшая в гимназии Ржевской. В 1910 году дом был надстроен.",
+                audio: "audio/14.mp3",
+                photos: [
+                    "obj14/i1.png"
+                ]
+            },
+            {
+                id: 15,
+                name: "Выставочный зал - галерея Василия Нестеренко (улица Малая Дмитровка, 29с4)",
+                lat: 55.771910,
+                lng: 37.604062,
+                // Пример с апострофами и кавычками
+                description: "В 1890 году семья Чехова переехала на Малую Дмитровку, 29, в маленький двухэтажный дом. Вернувшись в начале декабря 1890 года с Сахалина, писатель поселился во флигеле дома №29 в правой части двора, на втором этаже, где и прожил до 1892 года. Здесь он работал над рассказами “Попрыгунья”, “Дуэль”, “Палата №6” и встречался с В.Г. Короленко, Д.В. Григоровичем, В.А. Гиляровским, П.Д. Боборыкиным, В.И. Немировичем-Данченко, И.И. Левитаном. В декабре 1890 года Чехов писал Н.А. Лейкину: ‘‘Живу я теперь на Малой Дмитровке; улица хорошая, дом особнячок, два этажа. Пока не скучно, но скука уже заглядывает ко мне в окно и грозит пальцем’‘. С февраля 1892 года и по 1898 год Чехов не имеет в Москве постоянной квартиры и останавливается в гостинице. Сегодня в доме размещается выставочный зал ‘‘Домик Чехова’‘.",
+                audio: "audio/15.mp3",
+                photos: [
+                    "obj15/i1.png",
+                    "obj15/i2.png",
+                ]
+            },
+            
+            // Добавьте остальные объекты 6-15 аналогичным образом
+        ];
+
+        // Инициализация карты
+        const map = L.map('map').setView([55.751244, 37.618423], 12);
         
-        try {
-            // Сохраняем в localStorage
-            localStorage.setItem('interactive_map_' + mapId, JSON.stringify(mapData));
-            
-            // Дублируем сохранение под общим ключом для последней карты
-            localStorage.setItem('interactive_map_last_id', mapId);
-            
-            console.log('💾 Карта сохранена:', mapId, 'Мест:', locations.length);
-            
-            // Возвращаем данные для отладки
-            return mapData;
-        } catch (error) {
-            console.error('Ошибка сохранения в localStorage:', error);
-            return null;
+        // Добавляем слой карты
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 19
+        }).addTo(map);
+        
+        // Функция создания кастомной иконки
+        function createCustomIcon() {
+            return L.divIcon({
+                html: `
+                    <div class="custom-marker">
+                        <div class="marker-pin"></div>
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                `,
+                className: 'custom-div-icon',
+                iconSize: [60, 60],
+                iconAnchor: [30, 60],
+                popupAnchor: [0, -60]
+            });
         }
-    }
-    
-    // Функция загрузки данных карты из localStorage
-    function loadMapData(id) {
-        try {
-            console.log('🔍 Пытаемся загрузить карту с ID:', id);
+        
+        // Функция для создания галереи фото
+        function createPhotoGallery(photos, galleryId) {
+            const gallery = document.getElementById(galleryId);
+            if (!gallery) return;
             
-            const data = localStorage.getItem('interactive_map_' + id);
-            if (data) {
-                console.log('📂 Найдены данные в localStorage');
-                const mapData = JSON.parse(data);
+            // Очищаем галерею
+            gallery.innerHTML = '';
+            
+            // Устанавливаем атрибут с количеством фото
+            gallery.setAttribute('data-count', photos.length);
+            
+            // Если нет фото
+            if (!photos || photos.length === 0) {
+                gallery.style.display = 'none';
+                return;
+            }
+            
+            // Добавляем фотографии
+            photos.forEach((photoUrl, index) => {
+                const img = document.createElement('img');
+                img.src = photoUrl;
+                img.alt = `Фото ${index + 1}`;
+                img.className = 'photo-item';
                 
-                // Восстанавливаем locations
-                locations = mapData.locations || [];
-                console.log('📍 Загружено мест:', locations.length);
-                
-                // Обновляем текущий mapId
-                mapId = id;
-                
-                // Восстанавливаем маркеры на карте
-                restoreMarkers();
-                
-                // Обновляем список мест (если мы в режиме редактирования)
-                if (!document.body.classList.contains('presentation-only')) {
-                    updateLocationsList();
+                // Первое фото - главное
+                if (index === 0) {
+                    img.classList.add('main-photo');
                 }
                 
-                console.log('✅ Карта успешно загружена:', id);
-                return true;
+                img.onclick = () => openModal(photoUrl);
+                gallery.appendChild(img);
+            });
+        }
+        
+        // Функция для обновления информации о месте
+        function updateLocationInfo(attraction) {
+            const infoElement = document.getElementById(`info-${attraction.id}`);
+            if (!infoElement) return;
+            
+            // Обновляем заголовок
+            const titleElement = infoElement.querySelector('.location-title');
+            if (titleElement) {
+                titleElement.textContent = attraction.name;
+            }
+            
+            // Обновляем описание (деэкранируем текст)
+            const descElement = infoElement.querySelector('.location-description');
+            if (descElement && attraction.description) {
+                descElement.textContent = unescapeText(attraction.description);
+            }
+            
+            // Обновляем аудио
+            const audioElement = infoElement.querySelector('audio source');
+            if (audioElement && attraction.audio) {
+                audioElement.src = attraction.audio;
+                // Обновляем сам audio элемент
+                const audioPlayer = infoElement.querySelector('audio');
+                if (audioPlayer) {
+                    audioPlayer.load();
+                }
+            }
+            
+            // Создаем галерею фото
+            if (attraction.photos && attraction.photos.length > 0) {
+                createPhotoGallery(attraction.photos, `gallery-${attraction.id}`);
             } else {
-                console.warn('❌ Данные не найдены для ID:', id);
-                
-                // Пробуем загрузить последнюю карту
-                const lastId = localStorage.getItem('interactive_map_last_id');
-                if (lastId && lastId !== id) {
-                    console.log('🔄 Пробуем загрузить последнюю карту:', lastId);
-                    return loadMapData(lastId);
-                }
-                
-                return false;
-            }
-        } catch (e) {
-            console.error('Ошибка загрузки карты:', e);
-            return false;
-        }
-    }
-    
-    // Функция создания ссылки для презентации
-    function generatePresentationLink() {
-        // Сохраняем данные карты в localStorage
-        const savedData = saveMapData();
-        
-        if (!savedData) {
-            alert('Ошибка сохранения карты. Проверьте консоль браузера.');
-            return '';
-        }
-        
-        console.log('🔗 Генерируем ссылку для карты:', mapId);
-        
-        // Если файл запущен локально, создаем особую ссылку
-        if (isLocalFile) {
-            const fileName = window.location.pathname.split('/').pop() || 'карта.html';
-            return `Откройте файл ${fileName}?mode=presentation&id=${mapId} локально в браузере`;
-        }
-        
-        // Для веб-версии создаем полную ссылку
-        let baseUrl = window.location.origin + window.location.pathname;
-        
-        // Убираем возможные дублирующие слеши
-        baseUrl = baseUrl.replace(/([^:]\/)\/+/g, "$1");
-        
-        // Убираем параметры из URL, если они есть
-        baseUrl = baseUrl.split('?')[0];
-        baseUrl = baseUrl.split('#')[0];
-        
-        const presentationUrl = `${baseUrl}?mode=presentation&id=${mapId}`;
-        
-        console.log('📋 Ссылка сгенерирована:', presentationUrl);
-        return presentationUrl;
-    }
-    
-    // Функция проверки параметров URL при загрузке
-    function checkUrlParams() {
-        try {
-            const urlParams = new URLSearchParams(window.location.search);
-            const mode = urlParams.get('mode');
-            const id = urlParams.get('id');
-            
-            console.log('🔍 Проверяем параметры URL:', { mode, id });
-            
-            if (mode === 'presentation' && id) {
-                // Режим презентации по ссылке
-                console.log('🎬 Запуск в режиме презентации для карты:', id);
-                
-                // Даем время на инициализацию карты
-                setTimeout(() => {
-                    if (loadMapData(id)) {
-                        console.log('✅ Данные карты загружены');
-                        mapId = id;
-                        
-                        // Скрываем все элементы интерфейса
-                        document.body.classList.add('presentation-only');
-                        const mainContainer = document.getElementById('mainContainer');
-                        if (mainContainer) {
-                            mainContainer.classList.add('presentation-mode');
-                        }
-                        
-                        // Показываем кнопку "Назад"
-                        const backButton = document.getElementById('backButton');
-                        if (backButton) {
-                            backButton.style.display = 'block';
-                        }
-                        
-                        // Показываем кнопку для информации
-                        const showInfoBtn = document.getElementById('showInfoBtn');
-                        if (showInfoBtn) {
-                            showInfoBtn.style.display = 'block';
-                        }
-                        
-                        // Обновляем размер карты
-                        setTimeout(() => {
-                            map.invalidateSize();
-                        }, 100);
-                        
-                        // Показываем первую точку
-                        if (locations.length > 0) {
-                            console.log('📍 Показываем первую точку из', locations.length);
-                            showLocationInfo(locations[0]);
-                            map.setView([locations[0].lat, locations[0].lng], 13);
-                        } else {
-                            console.warn('📍 Нет точек для отображения');
-                            // Центрируем карту на Москве по умолчанию
-                            map.setView([55.7558, 37.6173], 13);
-                        }
-                        
-                        console.log('🎉 Режим презентации активирован для карты:', id);
-                    } else {
-                        console.error('❌ Не удалось загрузить карту:', id);
-                        alert('Карта не найдена. Возможно, ссылка устарела или данные были очищены.\n\nСоздайте новую карту или проверьте, что вы сохранили точки перед созданием ссылки.');
-                        
-                        // Переходим на основную страницу без параметров
-                        setTimeout(() => {
-                            window.location.href = window.location.pathname;
-                        }, 2000);
-                    }
-                }, 100);
-            } else if (mode === 'presentation' && !id) {
-                // Создаем новую карту для презентации
-                console.log('🆕 Создание новой карты для презентации');
-                mapId = generateMapId();
-                saveMapData();
-                
-                const newUrl = window.location.origin + window.location.pathname + 
-                              '?mode=presentation&id=' + mapId;
-                console.log('🔄 Перенаправляем на:', newUrl);
-                window.location.href = newUrl;
-            } else if (id && !mode) {
-                // Загружаем существующую карту в режиме редактирования
-                console.log('✏️ Загрузка карты для редактирования:', id);
-                if (loadMapData(id)) {
-                    console.log('✅ Карта загружена для редактирования');
-                    updateStatus(`Карта "${mapId}" загружена. Добавлено ${locations.length} мест.`);
-                } else {
-                    console.warn('⚠️ Карта не найдена, создаем новую');
-                    saveMapData();
-                }
-            }
-        } catch (error) {
-            console.error('Ошибка в checkUrlParams:', error);
-        }
-    }
-    
-    // Функция "Вернуться к редактированию" для режима презентации по ссылке
-    function goToEditMode() {
-        // Сохраняем текущие данные перед переходом
-        saveMapData();
-        
-        // Переходим на страницу редактирования
-        const editUrl = window.location.origin + window.location.pathname + 
-                      '?id=' + mapId;
-        console.log('🔄 Переход к редактированию:', editUrl);
-        window.location.href = editUrl;
-    }
-    
-    // Инициализация при загрузке
-    function init() {
-        console.log('🚀 Инициализация карты...');
-        
-        // Сначала проверяем параметры URL
-        checkUrlParams();
-        
-        // Если это режим редактирования (не презентация по ссылке)
-        if (!document.body.classList.contains('presentation-only')) {
-            console.log('✏️ Режим редактирования');
-            
-            // Автофокус на поле названия
-            const locationName = document.getElementById('locationName');
-            if (locationName) {
-                locationName.focus();
-            }
-            
-            // Если нет параметра id, создаем новую карту
-            const urlParams = new URLSearchParams(window.location.search);
-            const id = urlParams.get('id');
-            
-            if (!id) {
-                console.log('🆕 Создание новой карты');
-                saveMapData();
-            }
-            
-            updateStatus('Карта готова. Нажмите на карту, чтобы получить координаты.');
-        }
-        
-        // ... остальная часть init() без изменений ...
-    }
-    
-    // Запуск инициализации
-    init();
-    
-    // Экспорт функций для использования в консоли
-    window.addLocation = addLocation;
-    window.clearForm = clearForm;
-    window.locations = locations;
-    window.markers = markers;
-    window.prevGalleryImage = prevGalleryImage;
-    window.nextGalleryImage = nextGalleryImage;
-    window.showGalleryImage = showGalleryImage;
-    window.toggleMode = toggleMode;
-    window.toggleInfoPanel = toggleInfoPanel;
-    window.closeInfoPanel = closeInfoPanel;
-    window.generatePresentationLink = generatePresentationLink;
-    window.saveMapData = saveMapData;
-    window.loadMapData = loadMapData;
-    
-    // Функция для отладки - показать все сохраненные карты
-    window.showAllSavedMaps = function() {
-        console.log('📊 Все сохраненные карты в localStorage:');
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key.startsWith('interactive_map_')) {
-                console.log(key);
-                try {
-                    const data = JSON.parse(localStorage.getItem(key));
-                    console.log(data);
-                } catch(e) {
-                    console.log('Ошибка парсинга:', key);
+                // Скрываем галерею, если нет фото
+                const gallery = document.getElementById(`gallery-${attraction.id}`);
+                if (gallery) {
+                    gallery.style.display = 'none';
                 }
             }
         }
-    };
-    
-    console.log('✅ Карта готова!');
-    console.log('🌐 Режим:', isLocalFile ? 'Локальный (file://)' : 'Веб-сервер (http/https)');
-    console.log('🔗 ID карты:', mapId);
-    console.log('📍 Загружено точек:', locations.length);
-    console.log('💾 Используйте showAllSavedMaps() для отладки');
-</script>
+        
+        // Добавляем маркеры на карту и обновляем информацию
+        attractions.forEach(attraction => {
+            // Создаем маркер
+            const marker = L.marker([attraction.lat, attraction.lng], {
+                icon: createCustomIcon()
+            }).addTo(map);
+            
+            // Обновляем информацию в HTML
+            updateLocationInfo(attraction);
+            
+            // При клике на маркер
+            marker.on('click', function() {
+                showLocationInfo(attraction.id);
+                showInfoPanel();
+                
+                // Плавное перемещение к маркеру
+                map.flyTo([attraction.lat, attraction.lng], 16, {
+                    duration: 1
+                });
+            });
+            
+            // Всплывающее окно при наведении
+            marker.bindTooltip(attraction.name, {
+                permanent: false,
+                direction: 'top'
+            });
+        });
+        
+        // Элементы управления
+        const infoPanel = document.getElementById('infoPanel');
+        const togglePanelBtn = document.getElementById('togglePanel');
+        const closePanelBtn = document.getElementById('closePanel');
+        const overlay = document.getElementById('overlay');
+        const isMobile = window.innerWidth <= 992;
+        
+        // Функция показа/скрытия панели
+        function toggleInfoPanel() {
+            infoPanel.classList.toggle('active');
+            overlay.classList.toggle('active');
+            togglePanelBtn.classList.toggle('active');
+            
+            if (infoPanel.classList.contains('active')) {
+                map.invalidateSize();
+            }
+        }
+        
+        function showInfoPanel() {
+            if (isMobile) {
+                infoPanel.classList.add('active');
+                overlay.classList.add('active');
+                togglePanelBtn.classList.add('active');
+                map.invalidateSize();
+            }
+        }
+        
+        function hideInfoPanel() {
+            if (isMobile) {
+                infoPanel.classList.remove('active');
+                overlay.classList.remove('active');
+                togglePanelBtn.classList.remove('active');
+                map.invalidateSize();
+            }
+        }
+        
+        // События для кнопок
+        togglePanelBtn.addEventListener('click', toggleInfoPanel);
+        closePanelBtn.addEventListener('click', hideInfoPanel);
+        overlay.addEventListener('click', hideInfoPanel);
+        
+        // Закрытие по клику на карту (только на мобильных)
+        if (isMobile) {
+            map.on('click', function() {
+                hideInfoPanel();
+            });
+        }
+        
+        // Функция показа информации о локации
+        function showLocationInfo(locationId) {
+            // Скрываем все блоки с информацией
+            document.querySelectorAll('.location-info').forEach(el => {
+                el.classList.remove('active');
+            });
+            
+            if (!locationId) {
+                document.getElementById('info-default').classList.add('active');
+                return;
+            }
+            
+            const infoElement = document.getElementById(`info-${locationId}`);
+            if (infoElement) {
+                infoElement.classList.add('active');
+                infoElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+        
+        // Функции для модального окна с фото
+        function openModal(imageSrc) {
+            document.getElementById('modalImage').src = imageSrc;
+            document.getElementById('photoModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeModal() {
+            document.getElementById('photoModal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+        
+        // Закрытие модального окна по клику вне изображения
+        document.getElementById('photoModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+        
+        // Закрытие модального окна по клавише Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+        
+        // Функция начала аудиотура
+        function startTour() {
+            alert('Аудиотур начинается! Мы последовательно посетим все главные достопримечательности.');
+            showLocationInfo(1);
+            showInfoPanel();
+            if (attractions.length > 0) {
+                map.flyTo([attractions[0].lat, attractions[0].lng], 15);
+            }
+        }
+        
+        // Показываем блок по умолчанию при загрузке
+        showLocationInfo();
+        
+        // Добавляем контроль масштаба
+        L.control.zoom({
+            position: 'topright'
+        }).addTo(map);
+        
+        // Обработчик изменения размера окна
+        window.addEventListener('resize', function() {
+            map.invalidateSize();
+        });
+        
+        // Автоскрытие панели на мобильных при загрузке
+        if (isMobile) {
+            hideInfoPanel();
+        }
+        
+        // Инициализируем размер карты после загрузки
+        setTimeout(() => {
+            map.invalidateSize();
+        }, 100);
+    </script>
 </body>
 </html>
