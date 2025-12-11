@@ -1200,7 +1200,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- Библиотека для QR-кода -->
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-        <script>
+            <script>
         // Инициализация карты без атрибуции
         const map = L.map('map', {
             attributionControl: false,
@@ -1518,12 +1518,20 @@
             // Если файл запущен локально, создаем особую ссылку
             if (isLocalFile) {
                 // Для локального файла создаем ссылку с инструкцией
-                const fileName = window.location.pathname.split('/').pop();
-                return `Запустите ${fileName}?mode=presentation&id=${mapId} локально`;
+                const fileName = window.location.pathname.split('/').pop() || 'карта.html';
+                return `Откройте файл ${fileName}?mode=presentation&id=${mapId} локально в браузере`;
             }
             
-            // Для веб-версии создаем нормальную ссылку
-            const baseUrl = window.location.origin + window.location.pathname;
+            // Для веб-версии создаем полную ссылку
+            let baseUrl = window.location.origin + window.location.pathname;
+            
+            // Убираем возможные дублирующие слеши
+            baseUrl = baseUrl.replace(/([^:]\/)\/+/g, "$1");
+            
+            // Убираем параметры из URL, если они есть
+            baseUrl = baseUrl.split('?')[0];
+            baseUrl = baseUrl.split('#')[0];
+            
             const presentationUrl = `${baseUrl}?mode=presentation&id=${mapId}`;
             
             return presentationUrl;
@@ -1531,58 +1539,69 @@
         
         // Функция открытия модального окна с ссылкой
         function openShareModal() {
-            const presentationLink = generatePresentationLink();
-            const linkInput = document.getElementById('presentationLink');
-            linkInput.value = presentationLink;
-            
-            // Для локального файла показываем инструкцию вместо QR-кода
-            if (isLocalFile) {
-                document.getElementById('qrCode').innerHTML = `
-                    <p style="color:#e74c3c; font-weight:bold;">⚠️ Файл запущен локально</p>
-                    <p style="color:#666; font-size:14px; margin:10px 0;">
-                        Для использования режима презентации:
-                    </p>
-                    <ol style="text-align:left; font-size:13px; color:#666; padding-left:20px;">
-                        <li>Сохраните этот HTML-файл</li>
-                        <li>Откройте его в браузере с параметрами:<br>
-                            <code style="background:#f1f1f1; padding:2px 5px;">?mode=presentation&id=${mapId}</code>
-                        </li>
-                        <li>Или используйте локальный сервер (например, Live Server в VS Code)</li>
-                    </ol>
-                `;
-            } else {
-                // Генерируем QR-код только для веб-версии
-                generateQRCode(presentationLink);
+            try {
+                const presentationLink = generatePresentationLink();
+                const linkInput = document.getElementById('presentationLink');
+                if (!linkInput) {
+                    console.error('Элемент presentationLink не найден');
+                    return;
+                }
+                linkInput.value = presentationLink;
+                
+                // Для локального файла показываем инструкцию вместо QR-кода
+                if (isLocalFile) {
+                    document.getElementById('qrCode').innerHTML = `
+                        <p style="color:#e74c3c; font-weight:bold;">⚠️ Файл запущен локально</p>
+                        <p style="color:#666; font-size:14px; margin:10px 0;">
+                            Для использования режима презентации:
+                        </p>
+                        <ol style="text-align:left; font-size:13px; color:#666; padding-left:20px;">
+                            <li>Сохраните этот HTML-файл</li>
+                            <li>Откройте его в браузере с параметрами:<br>
+                                <code style="background:#f1f1f1; padding:2px 5px;">?mode=presentation&id=${mapId}</code>
+                            </li>
+                            <li>Или используйте локальный сервер (например, Live Server в VS Code)</li>
+                        </ol>
+                    `;
+                } else {
+                    // Генерируем QR-код только для веб-версии
+                    try {
+                        generateQRCode(presentationLink);
+                    } catch (qrError) {
+                        console.error('Ошибка генерации QR-кода:', qrError);
+                        document.getElementById('qrCode').innerHTML = 
+                            '<p style="color:#e74c3c;">QR-код недоступен</p>';
+                    }
+                }
+                
+                // Показываем модальное окно
+                const shareModal = document.getElementById('shareModal');
+                if (shareModal) {
+                    shareModal.classList.add('active');
+                } else {
+                    console.error('Модальное окно shareModal не найдено');
+                }
+            } catch (error) {
+                console.error('Ошибка в openShareModal:', error);
+                alert('Ошибка при открытии окна');
             }
-            
-            // Показываем модальное окно
-            document.getElementById('shareModal').classList.add('active');
         }
         
         // Функция копирования ссылки
         function copyLinkToClipboard() {
             const linkInput = document.getElementById('presentationLink');
+            if (!linkInput) {
+                console.error('Элемент presentationLink не найден');
+                return;
+            }
+            
             linkInput.select();
             linkInput.setSelectionRange(0, 99999);
             
             navigator.clipboard.writeText(linkInput.value)
                 .then(() => {
                     const copyBtn = document.getElementById('copyLinkBtn');
-                    const originalText = copyBtn.innerHTML;
-                    copyBtn.innerHTML = '<i class="fas fa-check"></i> Скопировано!';
-                    copyBtn.classList.add('copied');
-                    
-                    setTimeout(() => {
-                        copyBtn.innerHTML = originalText;
-                        copyBtn.classList.remove('copied');
-                    }, 2000);
-                })
-                .catch(err => {
-                    console.error('Ошибка копирования: ', err);
-                    // Резервный вариант для старых браузеров
-                    try {
-                        document.execCommand('copy');
-                        const copyBtn = document.getElementById('copyLinkBtn');
+                    if (copyBtn) {
                         const originalText = copyBtn.innerHTML;
                         copyBtn.innerHTML = '<i class="fas fa-check"></i> Скопировано!';
                         copyBtn.classList.add('copied');
@@ -1591,6 +1610,24 @@
                             copyBtn.innerHTML = originalText;
                             copyBtn.classList.remove('copied');
                         }, 2000);
+                    }
+                })
+                .catch(err => {
+                    console.error('Ошибка копирования: ', err);
+                    // Резервный вариант для старых браузеров
+                    try {
+                        document.execCommand('copy');
+                        const copyBtn = document.getElementById('copyLinkBtn');
+                        if (copyBtn) {
+                            const originalText = copyBtn.innerHTML;
+                            copyBtn.innerHTML = '<i class="fas fa-check"></i> Скопировано!';
+                            copyBtn.classList.add('copied');
+                            
+                            setTimeout(() => {
+                                copyBtn.innerHTML = originalText;
+                                copyBtn.classList.remove('copied');
+                            }, 2000);
+                        }
                     } catch (e) {
                         alert('Не удалось скопировать ссылку. Скопируйте вручную: ' + linkInput.value);
                     }
@@ -1600,26 +1637,45 @@
         // Функция генерации QR-кода
         function generateQRCode(url) {
             const canvas = document.getElementById('qrCanvas');
+            if (!canvas) {
+                console.error('Canvas для QR-кода не найден');
+                return;
+            }
+            
             const ctx = canvas.getContext('2d');
             
             // Очищаем canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
+            // Проверяем, есть ли библиотека QRCode
+            if (typeof QRCode === 'undefined') {
+                console.error('Библиотека QRCode не загружена');
+                document.getElementById('qrCode').innerHTML = 
+                    '<p style="color:#e74c3c;">Библиотека QR-кода недоступна</p>';
+                return;
+            }
+            
             // Генерируем QR-код
-            QRCode.toCanvas(canvas, url, {
-                width: 200,
-                margin: 1,
-                color: {
-                    dark: '#000000',
-                    light: '#FFFFFF'
-                }
-            }, function(error) {
-                if (error) {
-                    console.error('Ошибка генерации QR-кода:', error);
-                    document.getElementById('qrCode').innerHTML = 
-                        '<p style="color:#e74c3c;">Не удалось сгенерировать QR-код</p>';
-                }
-            });
+            try {
+                QRCode.toCanvas(canvas, url, {
+                    width: 200,
+                    margin: 1,
+                    color: {
+                        dark: '#000000',
+                        light: '#FFFFFF'
+                    }
+                }, function(error) {
+                    if (error) {
+                        console.error('Ошибка генерации QR-кода:', error);
+                        document.getElementById('qrCode').innerHTML = 
+                            '<p style="color:#e74c3c;">Не удалось сгенерировать QR-код</p>';
+                    }
+                });
+            } catch (error) {
+                console.error('Ошибка при генерации QR-кода:', error);
+                document.getElementById('qrCode').innerHTML = 
+                    '<p style="color:#e74c3c;">Ошибка генерации QR-кода</p>';
+            }
         }
         
         // Функция чтения файла в base64
@@ -1646,11 +1702,16 @@
             const uploadCount = document.getElementById('uploadCount');
             const uploadText = document.getElementById('uploadText');
             
-            progress.classList.add('active');
-            progressFill.style.width = `${(current / total) * 100}%`;
-            uploadCount.textContent = `${current} из ${total} файлов`;
+            if (!progress) return;
             
-            if (current === total) {
+            progress.classList.add('active');
+            if (progressFill) {
+                progressFill.style.width = `${(current / total) * 100}%`;
+            }
+            if (uploadCount) {
+                uploadCount.textContent = `${current} из ${total} файлов`;
+            }
+            if (uploadText && current === total) {
                 uploadText.textContent = 'Обработка файлов...';
             }
         }
@@ -1660,109 +1721,124 @@
             const progress = document.getElementById('uploadProgress');
             const progressFill = document.getElementById('progressFill');
             
+            if (!progress) return;
+            
             setTimeout(() => {
                 progress.classList.remove('active');
-                progressFill.style.width = '0%';
-                document.getElementById('uploadText').textContent = 'Загрузка файлов...';
+                if (progressFill) {
+                    progressFill.style.width = '0%';
+                }
+                const uploadText = document.getElementById('uploadText');
+                if (uploadText) {
+                    uploadText.textContent = 'Загрузка файлов...';
+                }
             }, 500);
         }
         
         // Обработка загрузки фото
-        document.getElementById('photoUpload').addEventListener('change', async function(e) {
-            const files = Array.from(e.target.files);
-            
-            // Ограничение по количеству файлов
-            if (files.length > 10) {
-                alert('Можно загрузить не более 10 фото за раз');
-                this.value = '';
-                return;
-            }
-            
-            // Ограничение по размеру файла (5 МБ)
-            const oversizedFiles = files.filter(file => file.size > 5 * 1024 * 1024);
-            if (oversizedFiles.length > 0) {
-                alert('Некоторые файлы слишком большие (максимум 5 МБ)');
-                this.value = '';
-                return;
-            }
-            
-            // Показываем индикатор загрузки
-            showUploadProgress(files.length, 0);
-            
-            try {
-                for (let i = 0; i < files.length; i++) {
-                    const file = files[i];
-                    
-                    // Обновляем прогресс
-                    showUploadProgress(files.length, i + 1);
-                    
-                    // Читаем файл как base64
-                    const fileData = await readFileAsBase64(file);
-                    
-                    // Добавляем в массив
-                    photoFiles.push(fileData);
-                    
-                    // Обновляем превью
-                    updatePhotosPreview();
+        const photoUpload = document.getElementById('photoUpload');
+        if (photoUpload) {
+            photoUpload.addEventListener('change', async function(e) {
+                const files = Array.from(e.target.files);
+                
+                // Ограничение по количеству файлов
+                if (files.length > 10) {
+                    alert('Можно загрузить не более 10 фото за раз');
+                    this.value = '';
+                    return;
                 }
                 
-                updateStatus(`Загружено ${files.length} фото. Всего: ${photoFiles.length}`);
-            } catch (error) {
-                console.error('Ошибка загрузки фото:', error);
-                alert('Ошибка при загрузке фото');
-            } finally {
-                // Скрываем индикатор
-                hideUploadProgress();
-                // Очищаем поле ввода
-                this.value = '';
-            }
-        });
+                // Ограничение по размеру файла (5 МБ)
+                const oversizedFiles = files.filter(file => file.size > 5 * 1024 * 1024);
+                if (oversizedFiles.length > 0) {
+                    alert('Некоторые файлы слишком большие (максимум 5 МБ)');
+                    this.value = '';
+                    return;
+                }
+                
+                // Показываем индикатор загрузки
+                showUploadProgress(files.length, 0);
+                
+                try {
+                    for (let i = 0; i < files.length; i++) {
+                        const file = files[i];
+                        
+                        // Обновляем прогресс
+                        showUploadProgress(files.length, i + 1);
+                        
+                        // Читаем файл как base64
+                        const fileData = await readFileAsBase64(file);
+                        
+                        // Добавляем в массив
+                        photoFiles.push(fileData);
+                        
+                        // Обновляем превью
+                        updatePhotosPreview();
+                    }
+                    
+                    updateStatus(`Загружено ${files.length} фото. Всего: ${photoFiles.length}`);
+                } catch (error) {
+                    console.error('Ошибка загрузки фото:', error);
+                    alert('Ошибка при загрузке фото');
+                } finally {
+                    // Скрываем индикатор
+                    hideUploadProgress();
+                    // Очищаем поле ввода
+                    this.value = '';
+                }
+            });
+        }
         
         // Обработка загрузки аудио
-        document.getElementById('audioUpload').addEventListener('change', async function(e) {
-            const file = e.target.files[0];
-            
-            if (!file) return;
-            
-            // Проверка типа файла
-            if (!file.type.startsWith('audio/')) {
-                alert('Пожалуйста, выберите аудиофайл');
-                this.value = '';
-                return;
-            }
-            
-            // Ограничение по размеру (10 МБ)
-            if (file.size > 10 * 1024 * 1024) {
-                alert('Аудиофайл слишком большой (максимум 10 МБ)');
-                this.value = '';
-                return;
-            }
-            
-            // Показываем индикатор
-            showUploadProgress(1, 0);
-            
-            try {
-                // Читаем файл как base64
-                audioFile = await readFileAsBase64(file);
+        const audioUpload = document.getElementById('audioUpload');
+        if (audioUpload) {
+            audioUpload.addEventListener('change', async function(e) {
+                const file = e.target.files[0];
                 
-                // Обновляем превью
-                updateAudioPreview();
+                if (!file) return;
                 
-                updateStatus(`Загружено аудио: ${file.name}`);
-            } catch (error) {
-                console.error('Ошибка загрузки аудио:', error);
-                alert('Ошибка при загрузке аудиофайла');
-            } finally {
-                // Скрываем индикатор
-                hideUploadProgress();
-                // Очищаем поле ввода
-                this.value = '';
-            }
-        });
+                // Проверка типа файла
+                if (!file.type.startsWith('audio/')) {
+                    alert('Пожалуйста, выберите аудиофайл');
+                    this.value = '';
+                    return;
+                }
+                
+                // Ограничение по размеру (10 МБ)
+                if (file.size > 10 * 1024 * 1024) {
+                    alert('Аудиофайл слишком большой (максимум 10 МБ)');
+                    this.value = '';
+                    return;
+                }
+                
+                // Показываем индикатор
+                showUploadProgress(1, 0);
+                
+                try {
+                    // Читаем файл как base64
+                    audioFile = await readFileAsBase64(file);
+                    
+                    // Обновляем превью
+                    updateAudioPreview();
+                    
+                    updateStatus(`Загружено аудио: ${file.name}`);
+                } catch (error) {
+                    console.error('Ошибка загрузки аудио:', error);
+                    alert('Ошибка при загрузке аудиофайла');
+                } finally {
+                    // Скрываем индикатор
+                    hideUploadProgress();
+                    // Очищаем поле ввода
+                    this.value = '';
+                }
+            });
+        }
         
         // Функция обновления превью фото
         function updatePhotosPreview() {
             const previewContainer = document.getElementById('photosPreview');
+            if (!previewContainer) return;
+            
             previewContainer.innerHTML = '';
             
             photoFiles.forEach((fileData, index) => {
@@ -1781,6 +1857,7 @@
         // Функция обновления превью аудио
         function updateAudioPreview() {
             const previewContainer = document.getElementById('audioPreview');
+            if (!previewContainer) return;
             
             if (audioFile) {
                 previewContainer.innerHTML = `
@@ -1827,15 +1904,19 @@
                 updatedAt: new Date().toISOString()
             };
             
-            localStorage.setItem('interactive_map_' + mapId, JSON.stringify(mapData));
-            console.log('💾 Карта сохранена:', mapId, 'Мест:', locations.length);
+            try {
+                localStorage.setItem('interactive_map_' + mapId, JSON.stringify(mapData));
+                console.log('💾 Карта сохранена:', mapId, 'Мест:', locations.length);
+            } catch (error) {
+                console.error('Ошибка сохранения в localStorage:', error);
+            }
         }
         
         // Функция загрузки данных карты из localStorage
         function loadMapData(id) {
-            const data = localStorage.getItem('interactive_map_' + id);
-            if (data) {
-                try {
+            try {
+                const data = localStorage.getItem('interactive_map_' + id);
+                if (data) {
                     const mapData = JSON.parse(data);
                     locations = mapData.locations || [];
                     
@@ -1847,9 +1928,9 @@
                     
                     console.log('📂 Карта загружена:', id, 'Мест:', locations.length);
                     return true;
-                } catch (e) {
-                    console.error('Ошибка загрузки карты:', e);
                 }
+            } catch (e) {
+                console.error('Ошибка загрузки карты:', e);
             }
             return false;
         }
@@ -1898,12 +1979,12 @@
         
         // Функция добавления места
         function addLocation() {
-            const name = document.getElementById('locationName').value.trim();
-            const lat = parseFloat(document.getElementById('latitude').value);
-            const lng = parseFloat(document.getElementById('longitude').value);
-            const description = document.getElementById('description').value.trim();
-            const color = document.getElementById('markerColor').value;
-            const icon = document.getElementById('markerIcon').value;
+            const name = document.getElementById('locationName')?.value.trim();
+            const lat = parseFloat(document.getElementById('latitude')?.value);
+            const lng = parseFloat(document.getElementById('longitude')?.value);
+            const description = document.getElementById('description')?.value.trim();
+            const color = document.getElementById('markerColor')?.value;
+            const icon = document.getElementById('markerIcon')?.value;
             
             // Проверка ввода
             if (!name) {
@@ -1981,6 +2062,8 @@
         // Функция обновления списка мест
         function updateLocationsList() {
             const container = document.getElementById('locationsList');
+            if (!container) return;
+            
             const header = container.querySelector('h3') || document.createElement('h3');
             header.innerHTML = `Добавленные места (${locations.length})`;
             if (!container.querySelector('h3')) {
@@ -2030,13 +2113,18 @@
         
         // Функция очистки формы
         function clearForm() {
-            document.getElementById('locationName').value = '';
-            document.getElementById('description').value = '';
+            const locationName = document.getElementById('locationName');
+            const description = document.getElementById('description');
+            
+            if (locationName) locationName.value = '';
+            if (description) description.value = '';
+            
             photoFiles = [];
             audioFile = null;
             updatePhotosPreview();
             updateAudioPreview();
-            document.getElementById('locationName').focus();
+            
+            if (locationName) locationName.focus();
         }
         
         // Функция обновления статуса
@@ -2049,49 +2137,63 @@
         
         // Функция проверки параметров URL при загрузке
         function checkUrlParams() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const mode = urlParams.get('mode');
-            const id = urlParams.get('id');
-            
-            if (mode === 'presentation' && id) {
-                // Режим презентации по ссылке
-                if (loadMapData(id)) {
-                    mapId = id;
-                    
-                    // Скрываем все элементы интерфейса
-                    document.body.classList.add('presentation-only');
-                    document.getElementById('mainContainer').classList.add('presentation-mode');
-                    
-                    // Показываем кнопку "Назад"
-                    document.getElementById('backButton').style.display = 'block';
-                    
-                    // Показываем кнопку для информации
-                    document.getElementById('showInfoBtn').style.display = 'block';
-                    
-                    // Обновляем размер карты
-                    setTimeout(() => {
-                        map.invalidateSize();
-                    }, 100);
-                    
-                    // Показываем первую точку
-                    if (locations.length > 0) {
-                        showLocationInfo(locations[0]);
-                        map.setView([locations[0].lat, locations[0].lng], 13);
-                    }
-                    
-                    console.log('🔗 Загружена карта для презентации:', id);
-                } else {
-                    alert('Карта не найдена. Возможно, ссылка устарела.');
-                    window.location.href = window.location.pathname; // Переходим на основную страницу
-                }
-            } else if (mode === 'presentation' && !id) {
-                // Создаем новую карту для презентации
-                mapId = generateMapId();
-                saveMapData();
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const mode = urlParams.get('mode');
+                const id = urlParams.get('id');
                 
-                const newUrl = window.location.origin + window.location.pathname + 
-                            '?mode=presentation&id=' + mapId;
-                window.location.href = newUrl;
+                if (mode === 'presentation' && id) {
+                    // Режим презентации по ссылке
+                    if (loadMapData(id)) {
+                        mapId = id;
+                        
+                        // Скрываем все элементы интерфейса
+                        document.body.classList.add('presentation-only');
+                        const mainContainer = document.getElementById('mainContainer');
+                        if (mainContainer) {
+                            mainContainer.classList.add('presentation-mode');
+                        }
+                        
+                        // Показываем кнопку "Назад"
+                        const backButton = document.getElementById('backButton');
+                        if (backButton) {
+                            backButton.style.display = 'block';
+                        }
+                        
+                        // Показываем кнопку для информации
+                        const showInfoBtn = document.getElementById('showInfoBtn');
+                        if (showInfoBtn) {
+                            showInfoBtn.style.display = 'block';
+                        }
+                        
+                        // Обновляем размер карты
+                        setTimeout(() => {
+                            map.invalidateSize();
+                        }, 100);
+                        
+                        // Показываем первую точку
+                        if (locations.length > 0) {
+                            showLocationInfo(locations[0]);
+                            map.setView([locations[0].lat, locations[0].lng], 13);
+                        }
+                        
+                        console.log('🔗 Загружена карта для презентации:', id);
+                    } else {
+                        alert('Карта не найдена. Возможно, ссылка устарела.');
+                        // Переходим на основную страницу без параметров
+                        window.location.href = window.location.pathname;
+                    }
+                } else if (mode === 'presentation' && !id) {
+                    // Создаем новую карту для презентации
+                    mapId = generateMapId();
+                    saveMapData();
+                    
+                    const newUrl = window.location.origin + window.location.pathname + 
+                                '?mode=presentation&id=' + mapId;
+                    window.location.href = newUrl;
+                }
+            } catch (error) {
+                console.error('Ошибка в checkUrlParams:', error);
             }
         }
         
@@ -2106,8 +2208,12 @@
         // Получение координат при клике на карту
         map.on('click', function(e) {
             if (!isPresentationMode && !document.body.classList.contains('presentation-only')) {
-                document.getElementById('latitude').value = e.latlng.lat.toFixed(6);
-                document.getElementById('longitude').value = e.latlng.lng.toFixed(6);
+                const latitude = document.getElementById('latitude');
+                const longitude = document.getElementById('longitude');
+                
+                if (latitude) latitude.value = e.latlng.lat.toFixed(6);
+                if (longitude) longitude.value = e.latlng.lng.toFixed(6);
+                
                 updateStatus(`Координаты: ${e.latlng.lat.toFixed(6)}, ${e.latlng.lng.toFixed(6)}`);
             }
         });
@@ -2135,16 +2241,25 @@
                 }
                 
                 // Автофокус на поле названия
-                document.getElementById('locationName').focus();
+                const locationName = document.getElementById('locationName');
+                if (locationName) {
+                    locationName.focus();
+                }
                 
                 updateStatus('Карта готова. Нажмите на карту, чтобы получить координаты.');
             }
             
             // Закрытие панели информации по крестику (всегда должно работать)
-            document.getElementById('closeInfoPanel').addEventListener('click', closeInfoPanel);
+            const closeInfoPanelBtn = document.getElementById('closeInfoPanel');
+            if (closeInfoPanelBtn) {
+                closeInfoPanelBtn.addEventListener('click', closeInfoPanel);
+            }
             
             // Кнопка показа/скрытия информации в режиме презентации
-            document.getElementById('showInfoBtn').addEventListener('click', toggleInfoPanel);
+            const showInfoBtn = document.getElementById('showInfoBtn');
+            if (showInfoBtn) {
+                showInfoBtn.addEventListener('click', toggleInfoPanel);
+            }
             
             // Назначаем кнопку переключения режима (если она есть)
             const modeToggle = document.getElementById('modeToggle');
@@ -2159,22 +2274,37 @@
             }
             
             // Назначаем кнопку копирования ссылки
-            document.getElementById('copyLinkBtn').addEventListener('click', copyLinkToClipboard);
+            const copyLinkBtn = document.getElementById('copyLinkBtn');
+            if (copyLinkBtn) {
+                copyLinkBtn.addEventListener('click', copyLinkToClipboard);
+            }
             
             // Назначаем кнопку закрытия модального окна
-            document.getElementById('closeModal').addEventListener('click', function() {
-                document.getElementById('shareModal').classList.remove('active');
-            });
+            const closeModalBtn = document.getElementById('closeModal');
+            if (closeModalBtn) {
+                closeModalBtn.addEventListener('click', function() {
+                    const shareModal = document.getElementById('shareModal');
+                    if (shareModal) {
+                        shareModal.classList.remove('active');
+                    }
+                });
+            }
             
             // Закрытие модального окна при клике на оверлей
-            document.getElementById('shareModal').addEventListener('click', function(e) {
-                if (e.target === this) {
-                    this.classList.remove('active');
-                }
-            });
+            const shareModal = document.getElementById('shareModal');
+            if (shareModal) {
+                shareModal.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        this.classList.remove('active');
+                    }
+                });
+            }
             
             // Назначаем кнопку "Назад" в режиме презентации
-            document.getElementById('backButton').addEventListener('click', goToEditMode);
+            const backButton = document.getElementById('backButton');
+            if (backButton) {
+                backButton.addEventListener('click', goToEditMode);
+            }
             
             // Горячие клавиши
             document.addEventListener('keydown', function(e) {
@@ -2189,7 +2319,10 @@
                 // Закрытие панели информации по ESC
                 if (e.key === 'Escape') {
                     closeInfoPanel();
-                    document.getElementById('shareModal').classList.remove('active');
+                    const shareModal = document.getElementById('shareModal');
+                    if (shareModal) {
+                        shareModal.classList.remove('active');
+                    }
                 }
                 
                 // Показать/скрыть информацию в режиме презентации
@@ -2283,11 +2416,8 @@
         window.loadMapData = loadMapData;
         
         console.log('✅ Карта готова!');
-        console.log('📌 Панель информации теперь чистая: только название, описание, фото и аудио');
-        console.log('❌ Убраны координаты, дата и время');
-        console.log('❎ Добавлен крестик для закрытия панели');
-        console.log('👁️ В режиме презентации работает кнопка "Показать/Скрыть информацию"');
-        console.log('🌐 Локальный режим:', isLocalFile ? 'ДА (file://)' : 'НЕТ (веб-сервер)');
+        console.log('🌐 Режим:', isLocalFile ? 'Локальный (file://)' : 'Веб-сервер (http/https)');
+        console.log('🔗 ID карты:', mapId);
     </script>
 </body>
 </html>
